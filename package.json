@@ -1,0 +1,26 @@
+{
+  "name": "playtesting-bot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/bot.js",
+  "scripts": {
+    "initDB": "npx ts-node src/init-schema.ts",
+    "dev": "tsx watch src/bot.ts",
+    "start": "node dist/bot.js",
+    "build": "tsup src/bot.ts --minify"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "better-sqlite3": "^8.4.0",
+    "discord.js": "^14.11.0",
+    "dotenv": "^16.3.1",
+    "replace-special-characters": "^1.2.7"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.4",
+    "tsup": "^7.1.0",
+    "tsx": "^3.12.7",
+    "typescript": "^5.1.6"
+  }
+}

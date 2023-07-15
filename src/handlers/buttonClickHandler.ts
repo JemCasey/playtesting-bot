@@ -1,0 +1,54 @@
+import { Interaction } from "discord.js";
+import { BONUS_REGEX, TOSSUP_REGEX } from "src/constants";
+import { getEmbeddedMessage, getTossupParts, removeBonusValue, removeSpoilers } from "src/utils";
+
+export default async function handleButtonClick(interaction: Interaction, setUserProgress: (key: any, value: any) => void) {
+    if (interaction.isButton() && interaction.customId === 'play_question') {
+
+        const message = await interaction.message.channel.messages.fetch(interaction.message.id);
+
+        if (message?.reference?.messageId) {
+            const questionMessage = await interaction.message.channel.messages.fetch(message.reference.messageId);
+            const bonusMatch = questionMessage.content.match(BONUS_REGEX);
+            const tossupMatch = questionMessage.content.match(TOSSUP_REGEX);
+
+            if (bonusMatch) {
+                const [_, leadin, part1, answer1, part2, answer2, part3, answer3] = bonusMatch;
+
+                setUserProgress(interaction.user.id, {
+                    type: "bonus",
+                    serverId: message.guild?.id,
+                    questionId: questionMessage.id,
+                    authorName: questionMessage.author.username,
+                    authorId: questionMessage.author.id,
+                    leadin,
+                    parts: [part1, part2, part3],
+                    answers: [answer1, answer2, answer3],
+                    index: 0,
+                    results: []
+                });
+
+                await interaction.user.send(getEmbeddedMessage("Here's your bonus! Type `d`/`direct` to check your the answer to the current part, or `p`/`pass` if you don't have a guess. Type `x` to exit reading without sharing results."));
+                await interaction.user.send(removeSpoilers(leadin) + '\n' + removeSpoilers(removeBonusValue(part1)));
+            } else if (tossupMatch) {
+                const [_, question, answer] = tossupMatch;
+                const questionParts = getTossupParts(question);
+
+                setUserProgress(interaction.user.id, {
+                    type: "tossup",
+                    serverId: message.guild?.id,
+                    questionId: questionMessage.id,
+                    authorName: questionMessage.author.username,
+                    authorId: questionMessage.author.id,
+                    questionParts,
+                    answer,
+                    index: 0
+                });
+
+                await interaction.user.send(getEmbeddedMessage("Here's your tossup! Please type `n`/`next` to see the next clue or `b`/`buzz` to buzz. Type `x` to exit reading without sharing results."));
+                await interaction.user.send(questionParts[0]);
+            }
+        }
+    }
+
+}
