@@ -5,6 +5,7 @@ import handleBonusPlaytest from './handlers/bonusHandler';
 import handleNewQuestion from './handlers/newQuestionHandler';
 import handleConfig from './handlers/configHandler';
 import handleButtonClick from './handlers/buttonClickHandler';
+import handleCategoryCommand from './handlers/categoryCommandHandler';
 
 const userProgressMap = new Map();
 
@@ -35,6 +36,8 @@ client.on('messageCreate', async (message) => {
 
         if (message.content === '!config') {
             handleConfig(message);
+        } else if (message.content === '!all') {
+            handleCategoryCommand(message);
         } else {
             let setUserProgress = userProgressMap.set.bind(userProgressMap);
             let deleteUserProgress = userProgressMap.delete.bind(userProgressMap);

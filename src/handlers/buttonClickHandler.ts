@@ -13,7 +13,7 @@ export default async function handleButtonClick(interaction: Interaction, setUse
             const tossupMatch = questionMessage.content.match(TOSSUP_REGEX);
 
             if (bonusMatch) {
-                const [_, leadin, part1, answer1, part2, answer2, part3, answer3] = bonusMatch;
+                const [_, leadin, __, part1, answer1, ___, part2, answer2, ____, part3, answer3] = bonusMatch;
 
                 setUserProgress(interaction.user.id, {
                     type: "bonus",
@@ -45,8 +45,12 @@ export default async function handleButtonClick(interaction: Interaction, setUse
                     index: 0
                 });
 
-                await interaction.user.send(getEmbeddedMessage("Here's your tossup! Please type `n`/`next` to see the next clue or `b`/`buzz` to buzz. Type `x` to exit reading without sharing results."));
-                await interaction.user.send(questionParts[0]);
+                if (questionParts[0]) {
+                    await interaction.user.send(getEmbeddedMessage("Here's your tossup! Please type `n`/`next` to see the next clue or `b`/`buzz` to buzz. Type `x` to exit reading without sharing results."));
+                    await interaction.user.send(questionParts[0]);
+                } else {
+                    await interaction.user.send(getEmbeddedMessage("Oops, looks like the question wasn't properly spoiler tagged. Let the author know so they can fix!"));
+                }
             }
         }
     }

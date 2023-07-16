@@ -1,4 +1,5 @@
 import { Client, EmbedBuilder, Message, TextChannel } from "discord.js";
+import KeySingleton from "src/services/keySingleton";
 import { ServerChannelType, getEmbeddedMessage, getServerChannels, removeBonusValue, removeSpoilers, saveBonusDirect, shortenAnswerline } from "src/utils";
 
 export default async function handleBonusPlaytest(message:Message<boolean>, client:Client<boolean>, userProgress:any, setUserProgress:(key:any, value:any) => void, deleteUserProgres: (key:any) => void) {
@@ -48,6 +49,7 @@ export default async function handleBonusPlaytest(message:Message<boolean>, clie
         if (userProgress.parts.length > index) {
             message.author.send(removeBonusValue(removeSpoilers(userProgress.parts[index])));
         } else {
+            const key = KeySingleton.getInstance().getKey(message);
             const resultsChannels = getServerChannels(userProgress.serverId, ServerChannelType.Results);
             let resultMessage = `<@${message.author.id}> `;  
             let partMessages:string[] = [];
@@ -66,7 +68,7 @@ export default async function handleBonusPlaytest(message:Message<boolean>, clie
 
                 partMessage += (r.note ? ` (answer given: "||${r.note}||")` : '')
                 partMessages.push(partMessage);
-                saveBonusDirect(userProgress.serverId, userProgress.questionId, userProgress.authorId, message.author.id, i + 1, r.points, r.note);
+                saveBonusDirect(userProgress.serverId, userProgress.questionId, userProgress.authorId, message.author.id, i + 1, r.points, r.note, key);
             });
 
             resultMessage += partMessages.join(', ') + ` for a total of ${totalPoints} points`;

@@ -1,4 +1,5 @@
 import { Message } from "discord.js";
+import { SECRET_ROLE } from "src/constants";
 import { ServerChannelType, saveServerChannelsFromMessage } from "src/utils";
 
 export default async function handleConfig(message:Message<boolean>) {
@@ -21,6 +22,7 @@ export default async function handleConfig(message:Message<boolean>) {
 
         saveServerChannelsFromMessage(collected, message.guild!, ServerChannelType.Results);
         message.channel.send('Configuration saved successfully.');
+        message.channel.send(`If you would like question answers and player notes to be encrypted in the bot's database, please create a role called \`${SECRET_ROLE}\`.`);
     } catch {
         message.channel.send("An error occurred, please try again");
     }
