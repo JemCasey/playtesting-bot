@@ -17,7 +17,8 @@ CREATE TABLE IF NOT EXISTS tossup (
     author_id TEXT,
     total_characters INT,
     category TEXT,
-    answer TEXT
+    answer TEXT,
+    thread_id TEXT
 )
 `)
 
@@ -26,7 +27,8 @@ CREATE TABLE IF NOT EXISTS bonus (
     question_id TEXT PRIMARY KEY,
     server_id TEXT,
     author_id TEXT,
-    category TEXT
+    category TEXT,
+    thread_id TEXT
 )
 `)
 

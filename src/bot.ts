@@ -6,6 +6,8 @@ import handleNewQuestion from './handlers/newQuestionHandler';
 import handleConfig from './handlers/configHandler';
 import handleButtonClick from './handlers/buttonClickHandler';
 import handleCategoryCommand from './handlers/categoryCommandHandler';
+import { QuestionType } from './utils';
+import handleAuthorCommand from './handlers/authorCommandHandler';
 
 const userProgressMap = new Map();
 
@@ -35,22 +37,24 @@ client.on('messageCreate', async (message) => {
             return;
 
         if (message.content === '!config') {
-            handleConfig(message);
-        } else if (message.content === '!all') {
-            handleCategoryCommand(message);
+            await handleConfig(message);
+        } else if (message.content === '!category') {
+            await handleCategoryCommand(message);
+        } else if (message.content === '!author') {
+            await handleAuthorCommand(message);            
         } else {
             let setUserProgress = userProgressMap.set.bind(userProgressMap);
             let deleteUserProgress = userProgressMap.delete.bind(userProgressMap);
 
             if (message.channel.type !== ChannelType.DM && message.content.includes('ANSWER:')) {
-                handleNewQuestion(message);
+                await handleNewQuestion(message);
             } else if (message.channel.type === ChannelType.DM) {
                 let userProgress = userProgressMap.get(message.author.id)
 
-                if (userProgress?.type === "tossup") {
-                    handleTossupPlaytest(message, client, userProgress, setUserProgress, deleteUserProgress);
-                } else if (userProgress?.type === "bonus") {
-                    handleBonusPlaytest(message, client, userProgress, setUserProgress, deleteUserProgress);
+                if (userProgress?.type === QuestionType.Tossup) {
+                    await handleTossupPlaytest(message, client, userProgress, setUserProgress, deleteUserProgress);
+                } else if (userProgress?.type === QuestionType.Bonus) {
+                    await handleBonusPlaytest(message, client, userProgress, setUserProgress, deleteUserProgress);
                 }
             }
         }
@@ -59,12 +63,12 @@ client.on('messageCreate', async (message) => {
     }
 });
 
-client.login(config.DISCORD_TOKEN);
-
 client.on('interactionCreate', async (interaction: Interaction) => {
     try {
-        handleButtonClick(interaction, userProgressMap.set.bind(userProgressMap));
+        await handleButtonClick(interaction, userProgressMap.set.bind(userProgressMap));
     } catch (e) {
         console.log(e);
     }
 });
+
+client.login(config.DISCORD_TOKEN);

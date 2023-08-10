@@ -25,15 +25,20 @@ export default async function handleNewQuestion(message:Message<boolean>) {
             const difficulty3Match = part3.match(BONUS_DIFFICULTY_REGEX) || [];
 
             saveBonus(message.id, message.guildId!, message.author.id, removeSpoilers(category), [
-                { part: 0, answer: shortenAnswerline(answer1), difficulty: difficulty1Match[1] || null},
-                { part: 1, answer: shortenAnswerline(answer2), difficulty: difficulty2Match[1] || null},
-                { part: 2, answer: shortenAnswerline(answer3), difficulty: difficulty3Match[1] || null}
+                { part: 1, answer: shortenAnswerline(answer1), difficulty: difficulty1Match[1] || null},
+                { part: 2, answer: shortenAnswerline(answer2), difficulty: difficulty2Match[1] || null},
+                { part: 3, answer: shortenAnswerline(answer3), difficulty: difficulty3Match[1] || null}
             ], key);
         } else if (tossupMatch) {
             const [_, question, answer, category] = tossupMatch;
-            const questionLength = getTossupParts(question!).reduce((a, b) => {
+            const tossupParts = getTossupParts(question);
+            const questionLength = tossupParts.reduce((a, b) => {
                 return a + b.length;
             }, 0);
+
+            // if a tossup was sent that has 2 or fewer spoiler tagged sections, assume that it's not meant to be played
+            if (tossupParts.length <= 2)
+                return;
 
             saveTossup(message.id, message.guildId!, message.author.id, questionLength, category ? removeSpoilers(category) : "", shortenAnswerline(answer), key);
         }

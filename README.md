@@ -1,6 +1,6 @@
 # Playtesting Bot
 
-This is a discord bot that can be used to playtest ACF-style quizbowl questions. After it is invited to a server and configured, it will reply to spoiler-tagged questions with a button to play the question via dm and share playtesters' results in designated channel(s).
+This is a discord bot that can be used to playtest ACF-style quizbowl questions. After it is invited to a server and configured, it will reply to spoiler-tagged questions with a button to play the question via dm and share playtesters' results in a designated channel.
 
 The bot can be invited to your server [here](https://discord.com/api/oauth2/authorize?client_id=1128432579436101724&permissions=67584&scope=bot). However, please note this version of **the bot is in alpha and 24/7 availability is not guaranteed**. If this is a concern for your project, you can follow the steps under [Installation for developers](#installation-for-developers) to set up your own instance.
 
@@ -46,7 +46,7 @@ or The Deerslayer; prompt on partial answers]||
 ## Using the bot (to playtest a question)
 - Click the "Play Tossup" or "Play Bonus" button provided by the bot
 - Look for a DM from the bot. Use the keyboard commands described by the bot to interact with the question.
-- When you're done, your result will be shared in a thread in any designated playtesting results channels.
+- When you're done, your result will be shared in a thread in the designated playtesting results channel.
 
 ## Installation for developers
 You will need to have [Node](https://nodejs.org/en/download) installed.

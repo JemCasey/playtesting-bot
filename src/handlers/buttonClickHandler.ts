@@ -1,10 +1,9 @@
 import { Interaction } from "discord.js";
 import { BONUS_REGEX, TOSSUP_REGEX } from "src/constants";
-import { getEmbeddedMessage, getTossupParts, removeBonusValue, removeSpoilers } from "src/utils";
+import { QuestionType, getEmbeddedMessage, getTossupParts, removeBonusValue, removeSpoilers } from "src/utils";
 
 export default async function handleButtonClick(interaction: Interaction, setUserProgress: (key: any, value: any) => void) {
     if (interaction.isButton() && interaction.customId === 'play_question') {
-
         const message = await interaction.message.channel.messages.fetch(interaction.message.id);
 
         if (message?.reference?.messageId) {
@@ -13,10 +12,10 @@ export default async function handleButtonClick(interaction: Interaction, setUse
             const tossupMatch = questionMessage.content.match(TOSSUP_REGEX);
 
             if (bonusMatch) {
-                const [_, leadin, __, part1, answer1, ___, part2, answer2, ____, part3, answer3] = bonusMatch;
+                const [_, leadin, part1, answer1, part2, answer2, part3, answer3] = bonusMatch;
 
                 setUserProgress(interaction.user.id, {
-                    type: "bonus",
+                    type: QuestionType.Bonus,
                     serverId: message.guild?.id,
                     questionId: questionMessage.id,
                     authorName: questionMessage.author.username,
@@ -35,7 +34,7 @@ export default async function handleButtonClick(interaction: Interaction, setUse
                 const questionParts = getTossupParts(question);
 
                 setUserProgress(interaction.user.id, {
-                    type: "tossup",
+                    type: QuestionType.Tossup,
                     serverId: message.guild?.id,
                     questionId: questionMessage.id,
                     authorName: questionMessage.author.username,

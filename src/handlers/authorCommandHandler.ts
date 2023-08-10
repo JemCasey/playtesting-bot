@@ -1,12 +1,12 @@
 import { Message } from "discord.js";
-import { getBonusCategoryData, getTossupCategoryData } from "src/utils/queries";
+import { getBonusAuthorData, getTossupAuthorData } from "src/utils/queries";
 import { getTable } from "src/utils/table";
 import { formatDecimal, formatPercent } from "src/utils";
-import { CATEGORY } from "src/constants";
+import { AUTHOR } from "src/constants";
 
-export default async function handleCategoryCommand(message:Message<boolean>) {
+export default async function handleAuthorCommand(message:Message<boolean>) {
     if (message.guildId) {
-        const categoryData = getTossupCategoryData(message.guildId!).map(d => Object.values({
+        const categoryData = getTossupAuthorData(message.guildId!).map(d => Object.values({
             ...d,
             conversion_rate: formatPercent(d.conversion_rate),
             neg_rate: formatPercent(d.neg_rate),
@@ -14,10 +14,10 @@ export default async function handleCategoryCommand(message:Message<boolean>) {
             earliest_buzz: d.earliest_buzz
         }));
         const tossupTable = getTable(
-            [ CATEGORY, 'Total', 'Total Plays', 'Conv. %', 'Neg %', 'Avg. Buzz', 'First Buzz'], 
+            [ AUTHOR, 'Total', 'Total Plays', 'Conv. %', 'Neg %', 'Avg. Buzz', 'First Buzz'], 
             categoryData
         );
-        const bonusCategoryData = getBonusCategoryData(message.guildId!).map(d => Object.values({
+        const bonusAuthorData = getBonusAuthorData(message.guildId!).map(d => Object.values({
             ...d,
             total_plays: d.total_plays.toFixed(0),
             ppb: formatDecimal(d.ppb),
@@ -26,8 +26,8 @@ export default async function handleCategoryCommand(message:Message<boolean>) {
             hard_conversion: formatPercent(d.hard_conversion)
         }));
         const bonusTable = getTable(
-            [ CATEGORY, 'Total', 'Total Plays', 'PPB', 'Easy %', 'Medium %', 'Hard %'], 
-            bonusCategoryData
+            [ AUTHOR, 'Total', 'Total Plays', 'PPB', 'Easy %', 'Medium %', 'Hard %'], 
+            bonusAuthorData
         );
 
         await message.reply(`## Tossups\n${tossupTable}`);

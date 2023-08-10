@@ -1,4 +1,4 @@
-import { Collection, EmbedBuilder, Guild, Message } from "discord.js";
+import { Collection, EmbedBuilder, Guild, Message, TextChannel } from "discord.js";
 import Database from 'better-sqlite3';
 import { encrypt } from "./crypto";
 
@@ -12,16 +12,27 @@ const insertBonusDirectCommand = db.prepare('INSERT INTO bonus_direct (server_id
 const insertTossupCommand = db.prepare('INSERT INTO tossup (question_id, server_id, author_id, total_characters, category, answer) VALUES (?, ?, ?, ?, ?, ?)');
 const insertBonusPartCommand = db.prepare('INSERT INTO bonus_part (question_id, part, difficulty, answer) VALUES (?, ?, ?, ?)');
 const insertBonusCommand = db.prepare('INSERT INTO bonus (question_id, server_id, author_id, category) VALUES (?, ?, ?, ?)');
+const updateTossupThreadCommand = db.prepare('UPDATE tossup SET thread_id = ? WHERE question_id = ?');
+const updateBonusThreadCommand = db.prepare('UPDATE bonus SET thread_id = ? WHERE question_id = ?');
+const getTossupThreadQuery = db.prepare('SELECT thread_id FROM tossup WHERE question_id = ?');
+const getBonusThreadQuery = db.prepare('SELECT thread_id FROM bonus WHERE question_id = ?');
 
 type nullableString = string | null | undefined;
 
 export const removeSpoilers = (text: string) => text.replaceAll('||', '');
 export const shortenAnswerline = (answerline: string) => removeSpoilers(answerline.replace(/ \[.+\]/, '').replace(/ \(.+\)/, '')).trim();
 export const removeBonusValue = (bonusPart: string) => bonusPart.replace(/\|{0,2}\[10\|{0,2}[emh]?\|{0,2}]\|{0,2} ?/, '');
+export const formatPercent = (value:number | null | undefined) => value == null || value == undefined ? "" : value.toLocaleString(undefined,{style: 'percent', minimumFractionDigits:2});
+export const formatDecimal = (value:number | null | undefined) => value == null || value == undefined ? "" : value?.toFixed(2);
 
 export enum ServerChannelType {
     Playtesting = 1,
     Results
+}
+
+export enum QuestionType {
+    Tossup = 1,
+    Bonus
 }
 
 export type ServerChannel = {
@@ -77,9 +88,12 @@ export const saveBonusDirect = (serverId: string, questionId: string, authorId: 
 }
 
 export const saveServerChannelsFromMessage = (collected: Collection<string, Message<boolean>>, server: Guild, serverChannelType: ServerChannelType) => {
-    const tags = collected?.first()?.content.split(' ') || [];
+    let tags = collected?.first()?.content.split(' ') || [];
 
     deleteServerChannelsCommand.run(server.id, serverChannelType);
+
+    if (serverChannelType === ServerChannelType.Results)
+        tags = [...tags[0]];
 
     tags.forEach((tag) => {
         const channelId = tag.match(/<#(\d+)>/)?.at(1);
@@ -93,4 +107,35 @@ export const saveServerChannelsFromMessage = (collected: Collection<string, Mess
 
 export const getServerChannels = (serverId: string, serverChannelType: ServerChannelType) => {
     return getServerChannelsQuery.all(serverId, serverChannelType) as ServerChannel[];
+}
+
+export const updateThreadId = (questionId: string, questionType: QuestionType, threadId: string) => {
+    if (questionType === QuestionType.Bonus)
+        updateBonusThreadCommand.run(threadId, questionId);
+    else
+        updateTossupThreadCommand.run(threadId, questionId);
+}
+
+export const getThreadId = (questionId: string, questionType: QuestionType) => {
+    if (questionType === QuestionType.Bonus)
+        return (getBonusThreadQuery.get(questionId) as any).thread_id;
+    else
+        return (getTossupThreadQuery.get(questionId) as any).thread_id;
+}
+
+export const getThread = async (userProgress:any, threadName:string, channel:TextChannel) => {
+    const threadId = getThreadId(userProgress.questionId, userProgress.type);
+    let thread;
+
+    if (!threadId) {
+        thread = await channel.threads.create({
+            name: threadName,
+            autoArchiveDuration: 60
+        });
+        updateThreadId(userProgress.questionId, userProgress.type, thread.id);
+    } else {
+        thread = channel.threads.cache.find(x => x.id === threadId)
+    }
+
+    return thread!;
 }
