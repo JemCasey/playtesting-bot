@@ -1,6 +1,6 @@
 import { Client, EmbedBuilder, Message, TextChannel } from "discord.js";
 import KeySingleton from "src/services/keySingleton";
-import { ServerChannelType, getEmbeddedMessage, getServerChannels, getThread, removeSpoilers, saveBuzz, shortenAnswerline } from "src/utils";
+import { getEmbeddedMessage, getServerChannels, getThread, removeSpoilers, saveBuzz, shortenAnswerline } from "src/utils";
 
 export default async function handleTossupPlaytest(message: Message<boolean>, client: Client<boolean>, userProgress: any, setUserProgress: (key: any, value: any) => void, deleteUserProgres: (key: any) => void) {
     if (message.content.toLowerCase().startsWith('x')) {
@@ -38,7 +38,7 @@ export default async function handleTossupPlaytest(message: Message<boolean>, cl
     } else if (message.content.toLowerCase().startsWith('e') || ((message.content.toLowerCase().startsWith('y') || message.content.toLowerCase().startsWith('n')) && userProgress.grade)) {
         const key = KeySingleton.getInstance().getKey(message);
         const note = message.content.match(/\((.+)\)/);
-        const resultChannel = getServerChannels(userProgress.serverId, ServerChannelType.Results)[0];
+        const resultChannel = getServerChannels(userProgress.serverId).find(s => s.channel_id === userProgress.channelId);
         let resultMessage = '';
         let buzzIndex = userProgress.index >= userProgress.questionParts.length ? userProgress.questionParts.length - 1 : userProgress.index;
         let value = message.content.toLowerCase().startsWith('y') ? 10 : (buzzIndex >= userProgress.questionParts.length - 1 ? 0 : -5);
@@ -58,14 +58,14 @@ export default async function handleTossupPlaytest(message: Message<boolean>, cl
         saveBuzz(userProgress.serverId, userProgress.questionId, userProgress.authorId, message.author.id, buzzIndex, charactersRevealed, value, sanitizedNote, key);
 
         const threadName = `Buzzes for ${userProgress.authorName}'s tossup beginning "${userProgress.questionParts[0].slice(0, 30)}..."`;
-        const channel = client.channels.cache.get(resultChannel.channel_id) as TextChannel;
+        const channel = client.channels.cache.get(resultChannel!.result_channel_id) as TextChannel;
         const thread = await getThread(userProgress, threadName, channel);
 
         await thread.send(resultMessage);
 
         deleteUserProgres(message.author.id);
 
-        await message.author.send(getEmbeddedMessage(`Thanks, your result has been sent to <#${resultChannel.channel_id}>`));
+        await message.author.send(getEmbeddedMessage(`Thanks, your result has been sent to <#${resultChannel!.result_channel_id}>`));
     } else {
         await message.author.send({
             embeds: [

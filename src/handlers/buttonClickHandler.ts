@@ -17,6 +17,7 @@ export default async function handleButtonClick(interaction: Interaction, setUse
                 setUserProgress(interaction.user.id, {
                     type: QuestionType.Bonus,
                     serverId: message.guild?.id,
+                    channelId: message.channelId,
                     questionId: questionMessage.id,
                     authorName: questionMessage.author.username,
                     authorId: questionMessage.author.id,
@@ -36,6 +37,7 @@ export default async function handleButtonClick(interaction: Interaction, setUse
                 setUserProgress(interaction.user.id, {
                     type: QuestionType.Tossup,
                     serverId: message.guild?.id,
+                    channelId: message.channelId,
                     questionId: questionMessage.id,
                     authorName: questionMessage.author.username,
                     authorId: questionMessage.author.id,

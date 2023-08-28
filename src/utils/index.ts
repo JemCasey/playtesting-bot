@@ -4,9 +4,9 @@ import { encrypt } from "./crypto";
 
 const db = new Database('database.db');
 
-const deleteServerChannelsCommand = db.prepare('DELETE FROM server_channel WHERE server_id = ? AND type = ?');
-const insertServerChannelCommand = db.prepare('INSERT INTO server_channel (server_id, channel_id, type) VALUES (?, ?, ?)');
-const getServerChannelsQuery = db.prepare('SELECT * FROM server_channel WHERE server_id = ? AND type = ?');
+const deleteServerChannelsCommand = db.prepare('DELETE FROM server_channel WHERE server_id = ?');
+const insertServerChannelCommand = db.prepare('INSERT INTO server_channel (server_id, channel_id, result_channel_id) VALUES (?, ?, ?)');
+const getServerChannelsQuery = db.prepare('SELECT * FROM server_channel WHERE server_id = ?');
 const insertBuzzCommand = db.prepare('INSERT INTO buzz (server_id, question_id, author_id, user_id, clue_index, characters_revealed, value, answer_given) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
 const insertBonusDirectCommand = db.prepare('INSERT INTO bonus_direct (server_id, question_id, author_id, user_id, part, value, answer_given) VALUES (?, ?, ?, ?, ?, ?, ?)');
 const insertTossupCommand = db.prepare('INSERT INTO tossup (question_id, server_id, author_id, total_characters, category, answer) VALUES (?, ?, ?, ?, ?, ?)');
@@ -38,7 +38,7 @@ export enum QuestionType {
 export type ServerChannel = {
     server_id: string;
     channel_id: string;
-    type: ServerChannelType;
+    result_channel_id: string;
 }
 
 export const getTossupParts = (questionText: string) => {
@@ -87,26 +87,24 @@ export const saveBonusDirect = (serverId: string, questionId: string, authorId: 
     insertBonusDirectCommand.run(serverId, questionId, authorId, userId, part, value, answerGiven ? encrypt(answerGiven, key) : null);
 }
 
-export const saveServerChannelsFromMessage = (collected: Collection<string, Message<boolean>>, server: Guild, serverChannelType: ServerChannelType) => {
+export const saveServerChannelsFromMessage = (collected: Collection<string, Message<boolean>>, server: Guild) => {
     let tags = collected?.first()?.content.split(' ') || [];
 
-    deleteServerChannelsCommand.run(server.id, serverChannelType);
-
-    if (serverChannelType === ServerChannelType.Results)
-        tags = [...tags[0]];
+    deleteServerChannelsCommand.run(server.id);
 
     tags.forEach((tag) => {
-        const channelId = tag.match(/<#(\d+)>/)?.at(1);
+        const [_, channelId, resultsChannelId] = tag.match(/<#(\d+)>\/<#(\d+)>/) || [];
         const channel = server.channels.cache.find((channel) => channel.id === channelId)?.id;
+        const resultsChannel = server.channels.cache.find((channel) => channel.id === channelId)?.id;
 
-        if (channel) {
-            insertServerChannelCommand.run(server.id, channelId, serverChannelType);
+        if (channel && resultsChannel) {
+            insertServerChannelCommand.run(server.id, channelId, resultsChannelId);
         }
     });
 }
 
-export const getServerChannels = (serverId: string, serverChannelType: ServerChannelType) => {
-    return getServerChannelsQuery.all(serverId, serverChannelType) as ServerChannel[];
+export const getServerChannels = (serverId: string) => {
+    return getServerChannelsQuery.all(serverId) as ServerChannel[];
 }
 
 export const updateThreadId = (questionId: string, questionType: QuestionType, threadId: string) => {

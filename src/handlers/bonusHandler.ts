@@ -1,6 +1,6 @@
 import { Client, EmbedBuilder, Message, TextChannel } from "discord.js";
 import KeySingleton from "src/services/keySingleton";
-import { ServerChannelType, getEmbeddedMessage, getServerChannels, getThread, removeBonusValue, removeSpoilers, saveBonusDirect, shortenAnswerline } from "src/utils";
+import { getEmbeddedMessage, getServerChannels, getThread, removeBonusValue, removeSpoilers, saveBonusDirect, shortenAnswerline } from "src/utils";
 
 export default async function handleBonusPlaytest(message: Message<boolean>, client: Client<boolean>, userProgress: any, setUserProgress: (key: any, value: any) => void, deleteUserProgres: (key: any) => void) {
     let validGradingResponse = userProgress.grade && (message.content.toLowerCase().startsWith('y') || message.content.toLowerCase().startsWith('n'));
@@ -50,7 +50,7 @@ export default async function handleBonusPlaytest(message: Message<boolean>, cli
             await message.author.send(removeBonusValue(removeSpoilers(userProgress.parts[index] || '')));
         } else {
             const key = KeySingleton.getInstance().getKey(message);
-            const resultChannel = getServerChannels(userProgress.serverId, ServerChannelType.Results)[0];
+            const resultChannel = getServerChannels(userProgress.serverId).find(s => s.channel_id === userProgress.channelId);
             let resultMessage = `<@${message.author.id}> `;
             let partMessages: string[] = [];
             let totalPoints = 0;
@@ -74,7 +74,7 @@ export default async function handleBonusPlaytest(message: Message<boolean>, cli
             resultMessage += partMessages.join(', ') + ` for a total of ${totalPoints} points`;
 
             const threadName = `Conversion data for ${userProgress.authorName}'s bonus beginning "${userProgress.leadin.slice(0, 30)}..."`;
-            const channel = client.channels.cache.get(resultChannel.channel_id) as TextChannel;
+            const channel = client.channels.cache.get(resultChannel!.result_channel_id) as TextChannel;
             const thread = await getThread(userProgress, threadName, channel);
 
             await thread.send(resultMessage);
@@ -83,7 +83,7 @@ export default async function handleBonusPlaytest(message: Message<boolean>, cli
 
             await message.author.send({
                 embeds: [
-                    new EmbedBuilder().setDescription(`Thanks, your result has been sent to <#${resultChannel.channel_id}>`)
+                    new EmbedBuilder().setDescription(`Thanks, your result has been sent to <#${resultChannel!.result_channel_id}>`)
                 ]
             });
         }

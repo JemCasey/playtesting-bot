@@ -1,12 +1,12 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, Message } from "discord.js";
 import { BONUS_DIFFICULTY_REGEX, BONUS_REGEX, TOSSUP_REGEX } from "src/constants";
 import KeySingleton from "src/services/keySingleton";
-import { ServerChannelType, getServerChannels, getTossupParts, removeSpoilers, saveBonus, saveTossup, shortenAnswerline } from "src/utils";
+import { getServerChannels, getTossupParts, removeSpoilers, saveBonus, saveTossup, shortenAnswerline } from "src/utils";
 
 export default async function handleNewQuestion(message:Message<boolean>) {
     const bonusMatch = message.content.match(BONUS_REGEX);
     const tossupMatch = message.content.match(TOSSUP_REGEX);
-    const playtestingChannels = getServerChannels(message.guild!.id, ServerChannelType.Playtesting);
+    const playtestingChannels = getServerChannels(message.guild!.id);
     const key = KeySingleton.getInstance().getKey(message);
 
     if (playtestingChannels.find(c => c.channel_id === message.channel.id) && (bonusMatch || tossupMatch)) {
