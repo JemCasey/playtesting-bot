@@ -1,6 +1,6 @@
 import { Interaction } from "discord.js";
 import { BONUS_REGEX, TOSSUP_REGEX } from "src/constants";
-import { QuestionType, getEmbeddedMessage, getTossupParts, removeBonusValue, removeSpoilers } from "src/utils";
+import { QuestionType, UserBonusProgress, UserTossupProgress, getEmbeddedMessage, getTossupParts, removeBonusValue, removeSpoilers } from "src/utils";
 
 export default async function handleButtonClick(interaction: Interaction, setUserProgress: (key: any, value: any) => void) {
     if (interaction.isButton() && interaction.customId === 'play_question') {
@@ -26,7 +26,7 @@ export default async function handleButtonClick(interaction: Interaction, setUse
                     answers: [answer1, answer2, answer3],
                     index: 0,
                     results: []
-                });
+                } as UserBonusProgress);
 
                 await interaction.user.send(getEmbeddedMessage("Here's your bonus! Type `d`/`direct` to check your the answer to the current part, or `p`/`pass` if you don't have a guess. Type `x` to exit reading without sharing results."));
                 await interaction.user.send(removeSpoilers(leadin) + '\n' + removeSpoilers(removeBonusValue(part1)));
@@ -44,7 +44,7 @@ export default async function handleButtonClick(interaction: Interaction, setUse
                     questionParts,
                     answer,
                     index: 0
-                });
+                } as UserTossupProgress);
 
                 if (questionParts[0]) {
                     await interaction.user.send(getEmbeddedMessage("Here's your tossup! Please type `n`/`next` to see the next clue or `b`/`buzz` to buzz. Type `x` to exit reading without sharing results."));

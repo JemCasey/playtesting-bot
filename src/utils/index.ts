@@ -1,6 +1,8 @@
-import { Collection, EmbedBuilder, Guild, Message, TextChannel } from "discord.js";
+import { Collection, EmbedBuilder, Guild, Message, MessageCreateOptions, MessageFlags, TextChannel } from "discord.js";
 import Database from 'better-sqlite3';
 import { encrypt } from "./crypto";
+import { sum, group, listify } from 'radash'
+import { getBonusSummaryData } from "./queries";
 
 const db = new Database('database.db');
 
@@ -16,14 +18,15 @@ const updateTossupThreadCommand = db.prepare('UPDATE tossup SET thread_id = ? WH
 const updateBonusThreadCommand = db.prepare('UPDATE bonus SET thread_id = ? WHERE question_id = ?');
 const getTossupThreadQuery = db.prepare('SELECT thread_id FROM tossup WHERE question_id = ?');
 const getBonusThreadQuery = db.prepare('SELECT thread_id FROM bonus WHERE question_id = ?');
+const getTossupBuzzesQuery = db.prepare('SELECT clue_index, value, characters_revealed FROM buzz WHERE question_id = ? ORDER BY clue_index');
 
 type nullableString = string | null | undefined;
 
 export const removeSpoilers = (text: string) => text.replaceAll('||', '');
 export const shortenAnswerline = (answerline: string) => removeSpoilers(answerline.replace(/ \[.+\]/, '').replace(/ \(.+\)/, '')).trim();
 export const removeBonusValue = (bonusPart: string) => bonusPart.replace(/\|{0,2}\[10\|{0,2}[emh]?\|{0,2}]\|{0,2} ?/, '');
-export const formatPercent = (value:number | null | undefined) => value == null || value == undefined ? "" : value.toLocaleString(undefined,{style: 'percent', minimumFractionDigits:2});
-export const formatDecimal = (value:number | null | undefined) => value == null || value == undefined ? "" : value?.toFixed(2);
+export const formatPercent = (value: number | null | undefined, minimumFractionDigits:number = 2) => value == null || value == undefined ? "" : value.toLocaleString(undefined, { style: 'percent', minimumFractionDigits });
+export const formatDecimal = (value: number | null | undefined) => value == null || value == undefined ? "" : value?.toFixed(2);
 
 export enum ServerChannelType {
     Playtesting = 1,
@@ -41,6 +44,36 @@ export type ServerChannel = {
     result_channel_id: string;
 }
 
+export type QuestionResult = {
+    points: number;
+    passed: boolean;
+    note: string;
+}
+
+export type UserProgress = {
+    type: QuestionType;
+    serverId: string;
+    channelId: string;
+    questionId: string;
+    authorId: string;
+    authorName: string;
+    index: number;
+    grade?: boolean;
+}
+
+export type UserBonusProgress = UserProgress & {
+    leadin: string;
+    parts: string[];
+    answers: string[];
+    results: QuestionResult[];
+}
+
+export type UserTossupProgress = UserProgress & {
+    buzzed: boolean;
+    questionParts: string[];
+    answer: string;
+}
+
 export const getTossupParts = (questionText: string) => {
     const regex = /\|\|([^|]+)\|\|/g;
     const matches = [];
@@ -53,11 +86,19 @@ export const getTossupParts = (questionText: string) => {
     return matches;
 }
 
-export const getEmbeddedMessage = (message:string) => {
+export const getEmbeddedMessage = (message: string, silent: boolean = false): MessageCreateOptions => {
     return {
         embeds: [
             new EmbedBuilder().setDescription(message)
-        ]
+        ],
+        flags: silent ? [MessageFlags.SuppressNotifications] : undefined
+    };
+}
+
+export const getSilentMessage = (message: string): MessageCreateOptions => {
+    return {
+        content: message,
+        flags: [MessageFlags.SuppressNotifications]
     };
 }
 
@@ -71,9 +112,9 @@ export const saveTossup = (questionId: string, serverId: string, authorId: strin
     insertTossupCommand.run(questionId, serverId, authorId, totalCharacters, category, encrypt(answer, key));
 }
 
-export const saveBonus = (questionId: string, serverId: string, authorId: string, category: string, parts:BonusPart[], key: nullableString) => {
+export const saveBonus = (questionId: string, serverId: string, authorId: string, category: string, parts: BonusPart[], key: nullableString) => {
     insertBonusCommand.run(questionId, serverId, authorId, category);
-    
+
     for (var { part, difficulty, answer } of parts) {
         insertBonusPartCommand.run(questionId, part, difficulty, encrypt(answer, key));
     }
@@ -121,7 +162,7 @@ export const getThreadId = (questionId: string, questionType: QuestionType) => {
         return (getTossupThreadQuery.get(questionId) as any).thread_id;
 }
 
-export const getThread = async (userProgress:any, threadName:string, channel:TextChannel) => {
+export const getThreadAndUpdateSummary = async (userProgress: UserProgress, threadName: string, channel: TextChannel) => {
     const threadId = getThreadId(userProgress.questionId, userProgress.type);
     let thread;
 
@@ -131,9 +172,53 @@ export const getThread = async (userProgress:any, threadName:string, channel:Tex
             autoArchiveDuration: 60
         });
         updateThreadId(userProgress.questionId, userProgress.type, thread.id);
+
+        if (userProgress.type === QuestionType.Tossup)
+            thread.send(getTossupSummary(userProgress.questionId, (userProgress as UserTossupProgress).questionParts));
+        else
+            thread.send(getBonusSummary(userProgress.questionId));
     } else {
-        thread = channel.threads.cache.find(x => x.id === threadId)
+        thread = channel.threads.cache.find(x => x.id === threadId);
+        const resultsMessage = (await thread!.messages.fetch()).find(m => m.content.includes("## Results"));
+
+        if (resultsMessage) {
+            if (userProgress.type === QuestionType.Tossup)
+                resultsMessage.edit(getTossupSummary(userProgress.questionId, (userProgress as UserTossupProgress).questionParts));
+            else
+                resultsMessage.edit(getBonusSummary(userProgress.questionId));
+
+        }
     }
 
     return thread!;
+}
+
+export const getTossupSummary = (questionId: string, questionParts: string[]) => {
+    const buzzes = getTossupBuzzesQuery.all(questionId) as any[];
+    const gets = buzzes.filter(b => b.value > 0);
+    const negs = buzzes.filter(b => b.value <= 0);
+    const groupedBuzzes = listify(group(buzzes, b => b.clue_index), (key, value) => ({
+        index: parseInt(key),
+        buzzes: value
+    }));
+    const totalCharacters = questionParts.join('').length;
+    let buzzSummaries:string[] = [];
+
+    for (let buzzpoint of groupedBuzzes) {
+        let cumulativeCharacters = questionParts.slice(0, buzzpoint.index + 1).join('').length;
+        let correctBuzzes = buzzpoint.buzzes?.filter(b => b.value > 0)?.length || 0;
+        let incorrectBuzzes = buzzpoint.buzzes?.filter(b => b.value <= 0)?.length || 0;
+
+        buzzSummaries.push(`${correctBuzzes} correct buzz${correctBuzzes !== 1 ? "es" : ""}, ${incorrectBuzzes} incorrect buzz${incorrectBuzzes !== 1 ? "es" : ""} at ${formatPercent(cumulativeCharacters / totalCharacters, 0)} mark (clue: ||${questionParts[buzzpoint.index].substring(0, 30)}||)`)
+    }
+
+    return `## Results\n` +
+        `${buzzSummaries.join('\n')}\n` +
+        `**Played:** ${buzzes.length}\t**Conv. %**: ${formatPercent(gets.length / buzzes.length)}\t**Neg %**: ${formatPercent(negs.length / buzzes.length)}\t**Avg. Buzz**: ${formatDecimal(sum(gets, b => b.characters_revealed) / gets.length)}`;
+}
+
+export const getBonusSummary = (questionId: string) => {
+    const bonusSummary = getBonusSummaryData(questionId) as any;
+
+    return `## Results\n**Total Plays**: ${bonusSummary.total_plays}\tPPB: ${bonusSummary.ppb.toFixed(2)}\tEasy %: ${formatPercent(bonusSummary.easy_conversion)}\tMedium %: ${formatPercent(bonusSummary.medium_conversion)}\tHard %: ${formatPercent(bonusSummary.hard_conversion)}`
 }

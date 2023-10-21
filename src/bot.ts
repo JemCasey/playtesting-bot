@@ -6,10 +6,10 @@ import handleNewQuestion from './handlers/newQuestionHandler';
 import handleConfig from './handlers/configHandler';
 import handleButtonClick from './handlers/buttonClickHandler';
 import handleCategoryCommand from './handlers/categoryCommandHandler';
-import { QuestionType } from './utils';
+import { QuestionType, UserBonusProgress, UserProgress, UserTossupProgress } from './utils';
 import handleAuthorCommand from './handlers/authorCommandHandler';
 
-const userProgressMap = new Map();
+const userProgressMap = new Map<string, UserProgress>();
 
 const client = new Client({
     intents: [
@@ -52,9 +52,9 @@ client.on('messageCreate', async (message) => {
                 let userProgress = userProgressMap.get(message.author.id)
 
                 if (userProgress?.type === QuestionType.Tossup) {
-                    await handleTossupPlaytest(message, client, userProgress, setUserProgress, deleteUserProgress);
+                    await handleTossupPlaytest(message, client, userProgress as UserTossupProgress, setUserProgress, deleteUserProgress);
                 } else if (userProgress?.type === QuestionType.Bonus) {
-                    await handleBonusPlaytest(message, client, userProgress, setUserProgress, deleteUserProgress);
+                    await handleBonusPlaytest(message, client, userProgress as UserBonusProgress, setUserProgress, deleteUserProgress);
                 }
             }
         }

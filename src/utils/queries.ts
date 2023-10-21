@@ -20,7 +20,7 @@ const bonusCategoryDataQuery = db.prepare(`
 SELECT category, 
 count(distinct bonus.question_id) AS total_questions,
 cast(count(distinct bonus_direct.id) as float) / 3 AS total_plays,
-cast(sum(bonus_direct.value) AS FLOAT) / (count(bonus_direct.id) * 3) AS ppb,
+cast(sum(bonus_direct.value) AS FLOAT) / (cast(count(distinct bonus_direct.id) as FLOAT) / 3) AS ppb,
 cast(sum(iif(bonus_part.difficulty = 'e' and bonus_direct.value > 0, 1, 0)) AS FLOAT) / sum(iif(bonus_part.difficulty = 'e', 1, 0)) AS easy_conversion,
 cast(sum(iif(bonus_part.difficulty = 'm' and bonus_direct.value > 0, 1, 0)) AS FLOAT) / sum(iif(bonus_part.difficulty = 'm', 1, 0)) AS medium_conversion,
 cast(sum(iif(bonus_part.difficulty = 'h' and bonus_direct.value > 0, 1, 0)) AS FLOAT) / sum(iif(bonus_part.difficulty = 'h', 1, 0)) AS hard_conversion
@@ -49,8 +49,8 @@ ORDER BY count(distinct tossup.question_id) DESC`);
 const bonusAuthorDataQuery = db.prepare(`
 SELECT bonus.author_id, 
 count(distinct bonus.question_id) AS total_questions,
-cast(count(distinct bonus_direct.id) as float) / 3 AS total_plays,
-cast(sum(bonus_direct.value) AS FLOAT) / (count(bonus_direct.id) * 3) AS ppb,
+cast(count(distinct bonus_direct.id) as FLOAT) / 3 AS total_plays,
+cast(sum(bonus_direct.value) AS FLOAT) / (cast(count(distinct bonus_direct.id) as FLOAT) / 3) AS ppb,
 cast(sum(iif(bonus_part.difficulty = 'e' and bonus_direct.value > 0, 1, 0)) AS FLOAT) / sum(iif(bonus_part.difficulty = 'e', 1, 0)) AS easy_conversion,
 cast(sum(iif(bonus_part.difficulty = 'm' and bonus_direct.value > 0, 1, 0)) AS FLOAT) / sum(iif(bonus_part.difficulty = 'm', 1, 0)) AS medium_conversion,
 cast(sum(iif(bonus_part.difficulty = 'h' and bonus_direct.value > 0, 1, 0)) AS FLOAT) / sum(iif(bonus_part.difficulty = 'h', 1, 0)) AS hard_conversion
@@ -60,6 +60,20 @@ JOIN bonus_part ON bonus_direct.question_id = bonus_part.question_id AND bonus_d
 WHERE bonus.server_id = ?
 GROUP BY bonus.author_id
 ORDER BY count(distinct bonus.question_id) DESC
+`);
+
+const getBonusSummaryQuery = db.prepare(`
+SELECT bonus.question_id,
+cast(count(distinct bonus_direct.id) as FLOAT) / 3 AS total_plays,
+cast(sum(bonus_direct.value) AS FLOAT) / (cast(count(distinct bonus_direct.id) as FLOAT) / 3) AS ppb,
+cast(sum(iif(bonus_part.difficulty = 'e' and bonus_direct.value > 0, 1, 0)) AS FLOAT) / sum(iif(bonus_part.difficulty = 'e', 1, 0)) AS easy_conversion,
+cast(sum(iif(bonus_part.difficulty = 'm' and bonus_direct.value > 0, 1, 0)) AS FLOAT) / sum(iif(bonus_part.difficulty = 'm', 1, 0)) AS medium_conversion,
+cast(sum(iif(bonus_part.difficulty = 'h' and bonus_direct.value > 0, 1, 0)) AS FLOAT) / sum(iif(bonus_part.difficulty = 'h', 1, 0)) AS hard_conversion
+FROM bonus
+JOIN bonus_direct ON bonus.question_id = bonus_direct.question_id
+JOIN bonus_part ON bonus_direct.question_id = bonus_part.question_id AND bonus_direct.part = bonus_part.part
+WHERE bonus.question_id = ?
+GROUP BY bonus.question_id
 `);
 
 export function getTossupCategoryData(serverId: string):any[] {
@@ -76,4 +90,8 @@ export function getTossupAuthorData(serverId: string):any[] {
 
 export function getBonusAuthorData(serverId: string):any[] {
     return bonusAuthorDataQuery.all(serverId) as any[];
+}
+
+export function getBonusSummaryData(questionId: string):any {
+    return getBonusSummaryQuery.get(questionId) as any;
 }

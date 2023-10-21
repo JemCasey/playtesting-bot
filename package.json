@@ -18,6 +18,7 @@
     "crypto": "^1.0.1",
     "discord.js": "^14.11.0",
     "dotenv": "^16.3.1",
+    "radash": "^11.0.0",
     "replace-special-characters": "^1.2.7"
   },
   "devDependencies": {
