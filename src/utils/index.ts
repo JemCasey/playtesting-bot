@@ -220,5 +220,5 @@ export const getTossupSummary = (questionId: string, questionParts: string[]) =>
 export const getBonusSummary = (questionId: string) => {
     const bonusSummary = getBonusSummaryData(questionId) as any;
 
-    return `## Results\n**Total Plays**: ${bonusSummary.total_plays}\tPPB: ${bonusSummary.ppb.toFixed(2)}\tEasy %: ${formatPercent(bonusSummary.easy_conversion)}\tMedium %: ${formatPercent(bonusSummary.medium_conversion)}\tHard %: ${formatPercent(bonusSummary.hard_conversion)}`
+    return `## Results\n**Total Plays**: ${bonusSummary.total_plays}\t**PPB**: ${bonusSummary.ppb.toFixed(2)}\t**Easy %**: ${formatPercent(bonusSummary.easy_conversion)}\t**Medium %**: ${formatPercent(bonusSummary.medium_conversion)}\t**Hard %**: ${formatPercent(bonusSummary.hard_conversion)}`
 }
