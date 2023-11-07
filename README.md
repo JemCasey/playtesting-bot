@@ -23,7 +23,7 @@ civil society to the first man who “enclosed a piece of ground” and declared
 the “general will”|| ||in a book that claims man is “everywhere… in chains.”|| ||For 10 points, name this author of
 Discourse on Inequality and The Social Contract.||
 ANSWER: ||Jean-Jacques Rousseau||
-<||Philosophy||, JB>
+<JB, ||Philosophy||>
 ```
 - If playtesting a bonus, send it in the following format:
 ```
@@ -39,7 +39,7 @@ ANSWER: ||The Last of the Mohicans||
 rifle is nicknamed for this action, which titles the chronologically first Leatherstocking Tale.||
 ANSWER: ||killing a deer [accept any synonyms in place of “killing,” such as hunting or shooting; accept Killdeer
 or The Deerslayer; prompt on partial answers]||
-<||American Literature||, JB>
+<JB, ||American Literature||>
 ```
 - As of now, messages should only contain one question; if you're playtesting a batch of questions, please send them one by one.
 
