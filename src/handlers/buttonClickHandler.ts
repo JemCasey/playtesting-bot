@@ -1,8 +1,8 @@
 import { Interaction } from "discord.js";
 import { BONUS_REGEX, TOSSUP_REGEX } from "src/constants";
-import { QuestionType, UserBonusProgress, UserTossupProgress, getEmbeddedMessage, getTossupParts, removeBonusValue, removeSpoilers } from "src/utils";
+import { QuestionType, UserBonusProgress, UserProgress, UserTossupProgress, getEmbeddedMessage, getTossupParts, removeBonusValue, removeSpoilers } from "src/utils";
 
-export default async function handleButtonClick(interaction: Interaction, setUserProgress: (key: any, value: any) => void) {
+export default async function handleButtonClick(interaction: Interaction, userProgress:  Map<string, UserProgress>, setUserProgress: (key: any, value: any) => void) {
     if (interaction.isButton() && interaction.customId === 'play_question') {
         const message = await interaction.message.channel.messages.fetch(interaction.message.id);
 
@@ -11,7 +11,9 @@ export default async function handleButtonClick(interaction: Interaction, setUse
             const bonusMatch = questionMessage.content.match(BONUS_REGEX);
             const tossupMatch = questionMessage.content.match(TOSSUP_REGEX);
 
-            if (bonusMatch) {
+            if (userProgress.get(interaction.user.id)) {
+                await interaction.user.send(getEmbeddedMessage("You tried to start playtesting a question but have a different question reading in progress. Please complete that reading or type `x` to end it, then try again."));
+            } else if (bonusMatch) {
                 const [_, leadin, part1, answer1, part2, answer2, part3, answer3] = bonusMatch;
 
                 setUserProgress(interaction.user.id, {

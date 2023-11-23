@@ -65,7 +65,7 @@ client.on('messageCreate', async (message) => {
 
 client.on('interactionCreate', async (interaction: Interaction) => {
     try {
-        await handleButtonClick(interaction, userProgressMap.set.bind(userProgressMap));
+        await handleButtonClick(interaction, userProgressMap, userProgressMap.set.bind(userProgressMap));
     } catch (e) {
         console.log(e);
     }
