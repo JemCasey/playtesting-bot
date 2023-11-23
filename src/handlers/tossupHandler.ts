@@ -67,8 +67,9 @@ export default async function handleTossupPlaytest(message: Message<boolean>, cl
         saveBuzz(userProgress.serverId, userProgress.questionId, userProgress.authorId, message.author.id, buzzIndex, charactersRevealed, value, sanitizedNote, key);
 
         const threadName = `Buzzes for ${userProgress.authorName}'s tossup beginning "${userProgress.questionParts[0].slice(0, 30)}..."`;
-        const channel = client.channels.cache.get(resultChannel!.result_channel_id) as TextChannel;
-        const thread = await getThreadAndUpdateSummary(userProgress, threadName, channel);
+        const resultsChannel = client.channels.cache.get(resultChannel!.result_channel_id) as TextChannel;
+        const playtestingChannel = client.channels.cache.get(userProgress.channelId) as TextChannel;
+        const thread = await getThreadAndUpdateSummary(userProgress, threadName, resultsChannel, playtestingChannel);
 
         await thread.send(resultMessage);
 

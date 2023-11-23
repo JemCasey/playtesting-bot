@@ -73,8 +73,9 @@ export default async function handleBonusPlaytest(message: Message<boolean>, cli
             resultMessage += partMessages.join(', ') + ` for a total of ${totalPoints} points`;
 
             const threadName = `Conversion data for ${userProgress.authorName}'s bonus beginning "${userProgress.leadin.slice(0, 30)}..."`;
-            const channel = client.channels.cache.get(resultChannel!.result_channel_id) as TextChannel;
-            const thread = await getThreadAndUpdateSummary(userProgress, threadName, channel);
+            const resultsChannel = client.channels.cache.get(resultChannel!.result_channel_id) as TextChannel;
+            const playtestingChannel = client.channels.cache.get(userProgress.channelId) as TextChannel;
+            const thread = await getThreadAndUpdateSummary(userProgress, threadName, resultsChannel, playtestingChannel);
 
             await thread.send(resultMessage);
 

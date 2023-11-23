@@ -1,7 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, Message } from "discord.js";
 import { BONUS_DIFFICULTY_REGEX, BONUS_REGEX, TOSSUP_REGEX } from "src/constants";
 import KeySingleton from "src/services/keySingleton";
-import { getServerChannels, getTossupParts, removeSpoilers, saveBonus, saveTossup, shortenAnswerline } from "src/utils";
+import { buildButtonMessage, getServerChannels, getTossupParts, removeSpoilers, saveBonus, saveTossup, shortenAnswerline } from "src/utils";
 
 const extractCategory = (metadata:string | undefined) => {
     if (!metadata)
@@ -28,14 +28,6 @@ export default async function handleNewQuestion(message:Message<boolean>) {
     const key = KeySingleton.getInstance().getKey(message);
 
     if (playtestingChannels.find(c => c.channel_id === message.channel.id) && (bonusMatch || tossupMatch)) {
-        const buttonLabel = 'Play ' + (bonusMatch ? "Bonus" : "Tossup");
-        const button = new ButtonBuilder()
-            .setStyle(ButtonStyle.Primary)
-            .setLabel(buttonLabel)
-            .setCustomId('play_question');
-
-        const row = new ActionRowBuilder<ButtonBuilder>().addComponents(button);
-
         if (bonusMatch) {
             const [_, __, part1, answer1, part2, answer2, part3, answer3, metadata] = bonusMatch;
             const difficulty1Match = part1.match(BONUS_DIFFICULTY_REGEX) || [];
@@ -61,6 +53,6 @@ export default async function handleNewQuestion(message:Message<boolean>) {
             saveTossup(message.id, message.guildId!, message.author.id, questionLength, extractCategory(metadata), shortenAnswerline(answer), key);
         }
 
-        await message.reply({ components: [row] });
+        await message.reply(buildButtonMessage(!!bonusMatch));
     }
 }

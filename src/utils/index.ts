@@ -1,4 +1,7 @@
-import { Collection, EmbedBuilder, Guild, Message, MessageCreateOptions, MessageFlags, TextChannel } from "discord.js";
+import { 
+    ActionRowBuilder, BaseMessageOptions, ButtonBuilder, ButtonStyle, Collection, EmbedBuilder, 
+    Guild, Message, MessageCreateOptions, MessageFlags, MessagePayload, TextChannel 
+} from "discord.js";
 import Database from 'better-sqlite3';
 import { encrypt } from "./crypto";
 import { sum, group, listify } from 'radash'
@@ -54,6 +57,7 @@ export type UserProgress = {
     type: QuestionType;
     serverId: string;
     channelId: string;
+    buttonMessageId: string;
     questionId: string;
     questionUrl: string;
     authorId: string;
@@ -169,23 +173,28 @@ export const getThreadId = (questionId: string, questionType: QuestionType) => {
         return (getTossupThreadQuery.get(questionId) as any).thread_id;
 }
 
-export const getThreadAndUpdateSummary = async (userProgress: UserProgress, threadName: string, channel: TextChannel) => {
+export const getThreadAndUpdateSummary = async (userProgress: UserProgress, threadName: string, resultsChannel: TextChannel, playtestingChannel: TextChannel) => {
     const threadId = getThreadId(userProgress.questionId, userProgress.type);
     let thread;
 
     if (!threadId) {
-        thread = await channel.threads.create({
+        thread = await resultsChannel.threads.create({
             name: threadName,
             autoArchiveDuration: 60
         });
         updateThreadId(userProgress.questionId, userProgress.type, thread.id);
+
+        const buttonMessage = await playtestingChannel.messages.fetch(userProgress.buttonMessageId);
+
+        if (buttonMessage)
+            buttonMessage.edit(buildButtonMessage(userProgress.type === QuestionType.Bonus, thread.url));
 
         if (userProgress.type === QuestionType.Tossup)
             thread.send(getTossupSummary(userProgress.questionId, (userProgress as UserTossupProgress).questionParts, (userProgress as UserTossupProgress).answer, userProgress.questionUrl));
         else
             thread.send(getBonusSummary(userProgress.questionId, userProgress.questionUrl));
     } else {
-        thread = channel.threads.cache.find(x => x.id === threadId);
+        thread = resultsChannel.threads.cache.find(x => x.id === threadId);
         const resultsMessage = (await thread!.messages.fetch()).find(m => m.content.includes("## Results"));
 
         if (resultsMessage) {
@@ -230,4 +239,21 @@ export const getBonusSummary = (questionId: string, questionUrl: string) => {
     const bonusSummary = getBonusSummaryData(questionId) as any;
 
     return `## Results\n**Total Plays**: ${bonusSummary.total_plays}\t**PPB**: ${bonusSummary.ppb.toFixed(2)}\t**Easy %**: ${formatPercent(bonusSummary.easy_conversion)}\t**Medium %**: ${formatPercent(bonusSummary.medium_conversion)}\t**Hard %**: ${formatPercent(bonusSummary.hard_conversion)}\n### [Return to question](${questionUrl})`
+}
+
+export const buildButtonMessage = (isBonus:boolean, threadUrl?:string):BaseMessageOptions => {
+    const buttonLabel = 'Play ' + (isBonus ? "Bonus" : "Tossup");
+    const buttons = new ActionRowBuilder().addComponents(new ButtonBuilder()
+        .setStyle(ButtonStyle.Primary)
+        .setLabel(buttonLabel)
+        .setCustomId('play_question'));
+
+    if (threadUrl) {
+        buttons.addComponents(new ButtonBuilder()
+        .setStyle(ButtonStyle.Link)
+        .setLabel("Go to Results")
+        .setURL(threadUrl))
+    }
+
+    return { components: [buttons] } as BaseMessageOptions;
 }
