@@ -2,11 +2,11 @@ import { Client, Message, TextChannel } from "discord.js";
 import KeySingleton from "src/services/keySingleton";
 import { UserBonusProgress, getEmbeddedMessage, getServerChannels, getSilentMessage, getThreadAndUpdateSummary, removeBonusValue, removeSpoilers, saveBonusDirect, shortenAnswerline } from "src/utils";
 
-export default async function handleBonusPlaytest(message: Message<boolean>, client: Client<boolean>, userProgress: UserBonusProgress, setUserProgress: (key: any, value: any) => void, deleteUserProgres: (key: any) => void) {
+export default async function handleBonusPlaytest(message: Message<boolean>, client: Client<boolean>, userProgress: UserBonusProgress, setUserProgress: (key: any, value: any) => void, deleteUserProgress: (key: any) => void) {
     let validGradingResponse = userProgress.grade && (message.content.toLowerCase().startsWith('y') || message.content.toLowerCase().startsWith('n'));
 
     if (message.content.toLowerCase().startsWith('x')) {
-        deleteUserProgres(message.author.id);
+        deleteUserProgress(message.author.id);
         await message.author.send(getEmbeddedMessage("Ended bonus reading.", true));
 
         return;
@@ -78,7 +78,7 @@ export default async function handleBonusPlaytest(message: Message<boolean>, cli
 
             await thread.send(resultMessage);
 
-            deleteUserProgres(message.author.id);
+            deleteUserProgress(message.author.id);
 
             await message.author.send(getEmbeddedMessage(`Thanks, your result has been sent to <#${resultChannel!.result_channel_id}>`, true));
         }

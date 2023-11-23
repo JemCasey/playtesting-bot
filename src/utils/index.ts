@@ -55,6 +55,7 @@ export type UserProgress = {
     serverId: string;
     channelId: string;
     questionId: string;
+    questionUrl: string;
     authorId: string;
     authorName: string;
     index: number;
@@ -180,18 +181,18 @@ export const getThreadAndUpdateSummary = async (userProgress: UserProgress, thre
         updateThreadId(userProgress.questionId, userProgress.type, thread.id);
 
         if (userProgress.type === QuestionType.Tossup)
-            thread.send(getTossupSummary(userProgress.questionId, (userProgress as UserTossupProgress).questionParts, (userProgress as UserTossupProgress).answer));
+            thread.send(getTossupSummary(userProgress.questionId, (userProgress as UserTossupProgress).questionParts, (userProgress as UserTossupProgress).answer, userProgress.questionUrl));
         else
-            thread.send(getBonusSummary(userProgress.questionId));
+            thread.send(getBonusSummary(userProgress.questionId, userProgress.questionUrl));
     } else {
         thread = channel.threads.cache.find(x => x.id === threadId);
         const resultsMessage = (await thread!.messages.fetch()).find(m => m.content.includes("## Results"));
 
         if (resultsMessage) {
             if (userProgress.type === QuestionType.Tossup)
-                resultsMessage.edit(getTossupSummary(userProgress.questionId, (userProgress as UserTossupProgress).questionParts, (userProgress as UserTossupProgress).answer));
+                resultsMessage.edit(getTossupSummary(userProgress.questionId, (userProgress as UserTossupProgress).questionParts, (userProgress as UserTossupProgress).answer, userProgress.questionUrl));
             else
-                resultsMessage.edit(getBonusSummary(userProgress.questionId));
+                resultsMessage.edit(getBonusSummary(userProgress.questionId, userProgress.questionUrl));
 
         }
     }
@@ -199,7 +200,7 @@ export const getThreadAndUpdateSummary = async (userProgress: UserProgress, thre
     return thread!;
 }
 
-export const getTossupSummary = (questionId: string, questionParts: string[], answer: string) => {
+export const getTossupSummary = (questionId: string, questionParts: string[], answer: string, questionUrl: string) => {
     const buzzes = getTossupBuzzesQuery.all(questionId) as any[];
     const gets = buzzes.filter(b => b.value > 0);
     const negs = buzzes.filter(b => b.value <= 0);
@@ -221,11 +222,12 @@ export const getTossupSummary = (questionId: string, questionParts: string[], an
     return `## Results\n` +
         `### ANSWER: ||${shortenAnswerline(answer)}||\n` +
         `${buzzSummaries.join('\n')}\n` +
-        `**Played:** ${buzzes.length}\t**Conv. %**: ${formatPercent(gets.length / buzzes.length)}\t**Neg %**: ${formatPercent(negs.length / buzzes.length)}\t**Avg. Buzz**: ${formatDecimal(sum(gets, b => b.characters_revealed) / gets.length)}`;
+        `**Played:** ${buzzes.length}\t**Conv. %**: ${formatPercent(gets.length / buzzes.length)}\t**Neg %**: ${formatPercent(negs.length / buzzes.length)}\t**Avg. Buzz**: ${formatDecimal(sum(gets, b => b.characters_revealed) / gets.length)}\n` +
+        `### [Return to question](${questionUrl})`;
 }
 
-export const getBonusSummary = (questionId: string) => {
+export const getBonusSummary = (questionId: string, questionUrl: string) => {
     const bonusSummary = getBonusSummaryData(questionId) as any;
 
-    return `## Results\n**Total Plays**: ${bonusSummary.total_plays}\t**PPB**: ${bonusSummary.ppb.toFixed(2)}\t**Easy %**: ${formatPercent(bonusSummary.easy_conversion)}\t**Medium %**: ${formatPercent(bonusSummary.medium_conversion)}\t**Hard %**: ${formatPercent(bonusSummary.hard_conversion)}`
+    return `## Results\n**Total Plays**: ${bonusSummary.total_plays}\t**PPB**: ${bonusSummary.ppb.toFixed(2)}\t**Easy %**: ${formatPercent(bonusSummary.easy_conversion)}\t**Medium %**: ${formatPercent(bonusSummary.medium_conversion)}\t**Hard %**: ${formatPercent(bonusSummary.hard_conversion)}\n### [Return to question](${questionUrl})`
 }

@@ -2,9 +2,9 @@ import { Client, Message, TextChannel } from "discord.js";
 import KeySingleton from "src/services/keySingleton";
 import { UserTossupProgress, getEmbeddedMessage, getServerChannels, getSilentMessage, getThreadAndUpdateSummary, removeSpoilers, saveBuzz, shortenAnswerline } from "src/utils";
 
-export default async function handleTossupPlaytest(message: Message<boolean>, client: Client<boolean>, userProgress: UserTossupProgress, setUserProgress: (key: string, value: UserTossupProgress) => void, deleteUserProgres: (key: any) => void) {
+export default async function handleTossupPlaytest(message: Message<boolean>, client: Client<boolean>, userProgress: UserTossupProgress, setUserProgress: (key: string, value: UserTossupProgress) => void, deleteUserProgress: (key: any) => void) {
     if (message.content.toLowerCase().startsWith('x')) {
-        deleteUserProgres(message.author.id);
+        deleteUserProgress(message.author.id);
         await message.author.send(getEmbeddedMessage("Ended tossup reading.", true));
     } else if ((!userProgress.buzzed && !userProgress.grade && message.content.toLowerCase().startsWith('n')) || (userProgress.buzzed && message.content.toLowerCase().startsWith('w'))) {
         const index = userProgress.index + 1;
@@ -71,7 +71,7 @@ export default async function handleTossupPlaytest(message: Message<boolean>, cl
 
         await thread.send(resultMessage);
 
-        deleteUserProgres(message.author.id);
+        deleteUserProgress(message.author.id);
 
         await message.author.send(getEmbeddedMessage(`Thanks, your result has been sent to <#${resultChannel!.result_channel_id}>`, true));
     } else {
