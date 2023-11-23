@@ -51,7 +51,8 @@ export default async function handleTossupPlaytest(message: Message<boolean>, cl
         let countIndex = buzzIndex;
         let charactersRevealed = userProgress.questionParts[buzzIndex].length;
 
-        await message.author.send(getSilentMessage(`ANSWER: ${removeSpoilers(userProgress.answer)}`));
+        if (message.content.toLowerCase().startsWith('e'))
+            await message.author.send(getSilentMessage(`ANSWER: ${removeSpoilers(userProgress.answer)}`));
 
         if (message.content.toLowerCase().startsWith('e')) {
             resultMessage = `<@${message.author.id}> did not buzz on ||${shortenAnswerline(userProgress.answer)}||`
