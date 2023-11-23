@@ -41,13 +41,15 @@ export default async function handleButtonClick(interaction: Interaction, setUse
                     questionId: questionMessage.id,
                     authorName: questionMessage.author.username,
                     authorId: questionMessage.author.id,
+                    buzzed: false,
                     questionParts,
+                    guesses: [],
                     answer,
                     index: 0
                 } as UserTossupProgress);
 
                 if (questionParts[0]) {
-                    await interaction.user.send(getEmbeddedMessage("Here's your tossup! Please type `n`/`next` to see the next clue or `b`/`buzz` to buzz. Type `x` to exit reading without sharing results."));
+                    await interaction.user.send(getEmbeddedMessage("Here's your tossup! Please type `n`/`next` to see the next clue or `b`/`buzz` to buzz. If you'd like to share your guess at this point in the question, you can put it in parenthesis at the end of your message, e.g. `n (thinking foo or bar)`. Type `x` to exit reading without sharing results."));
                     await interaction.user.send(questionParts[0]);
                 } else {
                     await interaction.user.send(getEmbeddedMessage("Oops, looks like the question wasn't properly spoiler tagged. Let the author know so they can fix!"));

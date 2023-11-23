@@ -2,17 +2,22 @@ import { Client, Message, TextChannel } from "discord.js";
 import KeySingleton from "src/services/keySingleton";
 import { UserTossupProgress, getEmbeddedMessage, getServerChannels, getSilentMessage, getThreadAndUpdateSummary, removeSpoilers, saveBuzz, shortenAnswerline } from "src/utils";
 
-export default async function handleTossupPlaytest(message: Message<boolean>, client: Client<boolean>, userProgress: UserTossupProgress, setUserProgress: (key: any, value: any) => void, deleteUserProgres: (key: any) => void) {
+export default async function handleTossupPlaytest(message: Message<boolean>, client: Client<boolean>, userProgress: UserTossupProgress, setUserProgress: (key: string, value: UserTossupProgress) => void, deleteUserProgres: (key: any) => void) {
     if (message.content.toLowerCase().startsWith('x')) {
         deleteUserProgres(message.author.id);
         await message.author.send(getEmbeddedMessage("Ended tossup reading.", true));
     } else if ((!userProgress.buzzed && !userProgress.grade && message.content.toLowerCase().startsWith('n')) || (userProgress.buzzed && message.content.toLowerCase().startsWith('w'))) {
-        let index = userProgress.index + 1;
-
+        const index = userProgress.index + 1;
+        const guess = message.content.match(/\((.+)\)/);
+            
         setUserProgress(message.author.id, {
             ...userProgress,
             buzzed: false,
             grade: false,
+            guesses: guess ? [...userProgress.guesses, {
+                index: userProgress.index,
+                guess: guess[1]
+            }] : userProgress.guesses,
             index
         });
 
@@ -51,7 +56,8 @@ export default async function handleTossupPlaytest(message: Message<boolean>, cl
         if (message.content.toLowerCase().startsWith('e')) {
             resultMessage = `<@${message.author.id}> did not buzz on ||${shortenAnswerline(userProgress.answer)}||`
         } else {
-            resultMessage = `<@${message.author.id}> ${value > 0 ? "buzzed correctly" : "buzzed incorrectly"} on ||${shortenAnswerline(userProgress.answer)}|| at "||${userProgress.questionParts[buzzIndex]}||"${note ? `; answer given was "||${sanitizedNote}||."` : ''}`
+            resultMessage = `<@${message.author.id}> ${value > 0 ? "buzzed correctly" : "buzzed incorrectly"} at "||${userProgress.questionParts[buzzIndex]}||"${note ? `; answer given was "||${sanitizedNote}||"` : ''}`
+            + (userProgress.guesses?.length > 0 ? `— was thinking ${userProgress.guesses.map(g => `||${g.guess}|| at clue #${g.index + 1}`).join(', ')}`: '')
         }
 
         while (countIndex-- > 0)

@@ -68,9 +68,15 @@ export type UserBonusProgress = UserProgress & {
     results: QuestionResult[];
 }
 
+type Guess = {
+    index: number;
+    guess: string;
+}
+
 export type UserTossupProgress = UserProgress & {
     buzzed: boolean;
     questionParts: string[];
+    guesses: Guess[];
     answer: string;
 }
 
@@ -174,7 +180,7 @@ export const getThreadAndUpdateSummary = async (userProgress: UserProgress, thre
         updateThreadId(userProgress.questionId, userProgress.type, thread.id);
 
         if (userProgress.type === QuestionType.Tossup)
-            thread.send(getTossupSummary(userProgress.questionId, (userProgress as UserTossupProgress).questionParts));
+            thread.send(getTossupSummary(userProgress.questionId, (userProgress as UserTossupProgress).questionParts, (userProgress as UserTossupProgress).answer));
         else
             thread.send(getBonusSummary(userProgress.questionId));
     } else {
@@ -183,7 +189,7 @@ export const getThreadAndUpdateSummary = async (userProgress: UserProgress, thre
 
         if (resultsMessage) {
             if (userProgress.type === QuestionType.Tossup)
-                resultsMessage.edit(getTossupSummary(userProgress.questionId, (userProgress as UserTossupProgress).questionParts));
+                resultsMessage.edit(getTossupSummary(userProgress.questionId, (userProgress as UserTossupProgress).questionParts, (userProgress as UserTossupProgress).answer));
             else
                 resultsMessage.edit(getBonusSummary(userProgress.questionId));
 
@@ -193,7 +199,7 @@ export const getThreadAndUpdateSummary = async (userProgress: UserProgress, thre
     return thread!;
 }
 
-export const getTossupSummary = (questionId: string, questionParts: string[]) => {
+export const getTossupSummary = (questionId: string, questionParts: string[], answer: string) => {
     const buzzes = getTossupBuzzesQuery.all(questionId) as any[];
     const gets = buzzes.filter(b => b.value > 0);
     const negs = buzzes.filter(b => b.value <= 0);
@@ -213,6 +219,7 @@ export const getTossupSummary = (questionId: string, questionParts: string[]) =>
     }
 
     return `## Results\n` +
+        `### ANSWER: ||${shortenAnswerline(answer)}||\n` +
         `${buzzSummaries.join('\n')}\n` +
         `**Played:** ${buzzes.length}\t**Conv. %**: ${formatPercent(gets.length / buzzes.length)}\t**Neg %**: ${formatPercent(negs.length / buzzes.length)}\t**Avg. Buzz**: ${formatDecimal(sum(gets, b => b.characters_revealed) / gets.length)}`;
 }
