@@ -1,6 +1,6 @@
 import { 
     ActionRowBuilder, BaseMessageOptions, ButtonBuilder, ButtonStyle, Collection, EmbedBuilder, 
-    Guild, Message, MessageCreateOptions, MessageFlags, MessagePayload, TextChannel 
+    Guild, Message, MessageCreateOptions, MessageFlags, TextChannel 
 } from "discord.js";
 import Database from 'better-sqlite3';
 import { encrypt } from "./crypto";

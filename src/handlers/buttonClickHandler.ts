@@ -10,7 +10,8 @@ export default async function handleButtonClick(interaction: Interaction, userPr
             const questionMessage = await interaction.message.channel.messages.fetch(message.reference.messageId);
             const bonusMatch = questionMessage.content.match(BONUS_REGEX);
             const tossupMatch = questionMessage.content.match(TOSSUP_REGEX);
-
+            const authorName = questionMessage.member?.displayName ?? questionMessage.author.username;
+            
             if (userProgress.get(interaction.user.id)) {
                 await interaction.user.send(getEmbeddedMessage("You tried to start playtesting a question but have a different question reading in progress. Please complete that reading or type `x` to end it, then try again."));
             } else if (bonusMatch) {
@@ -23,7 +24,7 @@ export default async function handleButtonClick(interaction: Interaction, userPr
                     buttonMessageId: message.id,
                     questionId: questionMessage.id,
                     questionUrl: questionMessage.url,
-                    authorName: questionMessage.author.username,
+                    authorName,
                     authorId: questionMessage.author.id,
                     leadin,
                     parts: [part1, part2, part3],
@@ -45,7 +46,7 @@ export default async function handleButtonClick(interaction: Interaction, userPr
                     buttonMessageId: message.id,
                     questionId: questionMessage.id,
                     questionUrl: questionMessage.url,
-                    authorName: questionMessage.author.username,
+                    authorName,
                     authorId: questionMessage.author.id,
                     buzzed: false,
                     questionParts,
