@@ -75,7 +75,7 @@ export default async function handleTossupPlaytest(message: Message<boolean>, cl
 
         deleteUserProgress(message.author.id);
 
-        await message.author.send(getEmbeddedMessage(`Thanks, your result has been sent to <#${resultChannel!.result_channel_id}>`, true));
+        await message.author.send(getEmbeddedMessage(`Thanks, your result has been sent to <#${thread.id}>`, true));
     } else {
         await message.author.send(getEmbeddedMessage("Command not recognized", true));
     }

@@ -81,7 +81,7 @@ export default async function handleBonusPlaytest(message: Message<boolean>, cli
 
             deleteUserProgress(message.author.id);
 
-            await message.author.send(getEmbeddedMessage(`Thanks, your result has been sent to <#${resultChannel!.result_channel_id}>`, true));
+            await message.author.send(getEmbeddedMessage(`Thanks, your result has been sent to <#${thread.id}>`, true));
         }
     }
 }
