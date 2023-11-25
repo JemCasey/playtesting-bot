@@ -1,6 +1,6 @@
 import { Client, Message, TextChannel } from "discord.js";
 import KeySingleton from "src/services/keySingleton";
-import { UserTossupProgress, getEmbeddedMessage, getServerChannels, getSilentMessage, getThreadAndUpdateSummary, removeSpoilers, saveBuzz, shortenAnswerline } from "src/utils";
+import { UserTossupProgress, getEmbeddedMessage, getServerChannels, getSilentMessage, getThreadAndUpdateSummary, getToFirstIndicator, removeSpoilers, saveBuzz, shortenAnswerline } from "src/utils";
 
 export default async function handleTossupPlaytest(message: Message<boolean>, client: Client<boolean>, userProgress: UserTossupProgress, setUserProgress: (key: string, value: UserTossupProgress) => void, deleteUserProgress: (key: any) => void) {
     if (message.content.toLowerCase().startsWith('x')) {
@@ -66,10 +66,10 @@ export default async function handleTossupPlaytest(message: Message<boolean>, cl
 
         saveBuzz(userProgress.serverId, userProgress.questionId, userProgress.authorId, message.author.id, buzzIndex, charactersRevealed, value, sanitizedNote, key);
 
-        const threadName = `Buzzes for ${userProgress.authorName}'s tossup beginning "${userProgress.questionParts[0].slice(0, 30)}..."`;
+        const threadName = `Buzzes for ${userProgress.authorName}'s tossup "${getToFirstIndicator(userProgress.questionParts[0])}"`;
         const resultsChannel = client.channels.cache.get(resultChannel!.result_channel_id) as TextChannel;
         const playtestingChannel = client.channels.cache.get(userProgress.channelId) as TextChannel;
-        const thread = await getThreadAndUpdateSummary(userProgress, threadName, resultsChannel, playtestingChannel);
+        const thread = await getThreadAndUpdateSummary(userProgress, threadName.slice(0, 100), resultsChannel, playtestingChannel);
 
         await thread.send(resultMessage);
 

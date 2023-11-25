@@ -257,3 +257,19 @@ export const buildButtonMessage = (isBonus:boolean, threadUrl?:string):BaseMessa
 
     return { components: [buttons] } as BaseMessageOptions;
 }
+
+export const getToFirstIndicator = (clue:string) => {
+    const words = clue.split(' ');
+    const thisIndex = words.findIndex(w => w.toLocaleLowerCase() === 'this' || w.toLocaleLowerCase() === 'these');
+    const defaultSize = 30;
+
+    // if "this" or "these" is in the string and isn't the first word, 
+    // truncate after first pronoun: https://github.com/JemCasey/playtesting-bot/issues/8
+    if (thisIndex > 0) {
+        const endIndex = thisIndex + 2;
+
+        return `${words.slice(0, endIndex).join(' ')}${endIndex >= words.length ? '' : '...'}`;
+    } else {
+        return `${clue.substring(0, defaultSize)}${clue.length > defaultSize ? '...' : ''}`;
+    }
+}
