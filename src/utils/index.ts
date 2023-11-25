@@ -212,7 +212,7 @@ export const getThreadAndUpdateSummary = async (userProgress: UserProgress, thre
 export const getTossupSummary = (questionId: string, questionParts: string[], answer: string, questionUrl: string) => {
     const buzzes = getTossupBuzzesQuery.all(questionId) as any[];
     const gets = buzzes.filter(b => b.value > 0);
-    const negs = buzzes.filter(b => b.value <= 0);
+    const negs = buzzes.filter(b => b.value < 0);
     const groupedBuzzes = listify(group(buzzes, b => b.clue_index), (key, value) => ({
         index: parseInt(key),
         buzzes: value
