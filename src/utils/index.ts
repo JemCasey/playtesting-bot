@@ -225,7 +225,7 @@ export const getTossupSummary = (questionId: string, questionParts: string[], an
         let correctBuzzes = buzzpoint.buzzes?.filter(b => b.value > 0)?.length || 0;
         let incorrectBuzzes = buzzpoint.buzzes?.filter(b => b.value <= 0)?.length || 0;
 
-        buzzSummaries.push(`${correctBuzzes} correct buzz${correctBuzzes !== 1 ? "es" : ""}, ${incorrectBuzzes} incorrect buzz${incorrectBuzzes !== 1 ? "es" : ""} at ${formatPercent(cumulativeCharacters / totalCharacters, 0)} mark (clue: ||${questionParts[buzzpoint.index].substring(0, 30)}||)`)
+        buzzSummaries.push(`${formatPercent(cumulativeCharacters / totalCharacters, 0)} mark (||${questionParts[buzzpoint.index].substring(0, 30)}||): ${correctBuzzes} correct buzz${correctBuzzes !== 1 ? "es" : ""}, ${incorrectBuzzes} incorrect buzz${incorrectBuzzes !== 1 ? "es" : ""}`)
     }
 
     return `## Results\n` +
