@@ -25,7 +25,7 @@ async function handleThread(message:Message, isBonus: boolean, question:string, 
     if (message.content.includes('!t')) {
         const thread = await message.startThread({
             name: metadata ? 
-                `${removeSpoilers(metadata)} - ${isBonus ? "Bonus" : "Tossup"} ${getCategoryCount(message.author.id, message.guild?.id, extractCategory(metadata), isBonus) + 1}` 
+                `${removeSpoilers(metadata)} - ${isBonus ? "Bonus" : "Tossup"} ${getCategoryCount(message.author.id, message.guild?.id, extractCategory(metadata), isBonus)}` 
                 : `"${question.substring(0, 30)}..."`,
             autoArchiveDuration: 60
         });
