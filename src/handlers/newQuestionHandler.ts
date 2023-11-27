@@ -1,7 +1,7 @@
 import { Message } from "discord.js";
 import { BONUS_DIFFICULTY_REGEX, BONUS_REGEX, TOSSUP_REGEX } from "src/constants";
 import KeySingleton from "src/services/keySingleton";
-import { buildButtonMessage, getServerChannels, getTossupParts, removeSpoilers, saveBonus, saveTossup, shortenAnswerline } from "src/utils";
+import { buildButtonMessage, getCategoryCount, getServerChannels, getTossupParts, removeSpoilers, saveBonus, saveTossup, shortenAnswerline } from "src/utils";
 
 const extractCategory = (metadata:string | undefined) => {
     if (!metadata)
@@ -21,6 +21,19 @@ const extractCategory = (metadata:string | undefined) => {
     return "";
 }
 
+async function handleThread(message:Message, isBonus: boolean, question:string, metadata:string) {
+    if (message.content.includes('!t')) {
+        const thread = await message.startThread({
+            name: metadata ? 
+                `${removeSpoilers(metadata)} - ${isBonus ? "Bonus" : "Tossup"} ${getCategoryCount(message.author.id, message.guild?.id, extractCategory(metadata), isBonus) + 1}` 
+                : `"${question.substring(0, 30)}..."`,
+            autoArchiveDuration: 60
+        });
+
+        thread.members.add(message.author);
+    }
+}
+
 export default async function handleNewQuestion(message:Message<boolean>) {
     const bonusMatch = message.content.match(BONUS_REGEX);
     const tossupMatch = message.content.match(TOSSUP_REGEX);
@@ -28,11 +41,16 @@ export default async function handleNewQuestion(message:Message<boolean>) {
     const key = KeySingleton.getInstance().getKey(message);
 
     if (playtestingChannels.find(c => c.channel_id === message.channel.id) && (bonusMatch || tossupMatch)) {
+        let threadQuestionText = '';
+        let threadMetadata = '';
+
         if (bonusMatch) {
             const [_, __, part1, answer1, part2, answer2, part3, answer3, metadata, difficultyPart1, difficultyPart2, difficultyPart3] = bonusMatch;
             const difficulty1Match = part1.match(BONUS_DIFFICULTY_REGEX) || [];
             const difficulty2Match = part2.match(BONUS_DIFFICULTY_REGEX) || [];
             const difficulty3Match = part3.match(BONUS_DIFFICULTY_REGEX) || [];
+            threadQuestionText = part1;
+            threadMetadata = metadata;
 
             saveBonus(message.id, message.guildId!, message.author.id, extractCategory(metadata), [
                 { part: 1, answer: shortenAnswerline(answer1), difficulty: difficultyPart1 || difficulty1Match[1] || null},
@@ -45,6 +63,8 @@ export default async function handleNewQuestion(message:Message<boolean>) {
             const questionLength = tossupParts.reduce((a, b) => {
                 return a + b.length;
             }, 0);
+            threadQuestionText = question;
+            threadMetadata = metadata;
 
             // if a tossup was sent that has 2 or fewer spoiler tagged sections, assume that it's not meant to be played
             if (tossupParts.length <= 2)
@@ -54,5 +74,6 @@ export default async function handleNewQuestion(message:Message<boolean>) {
         }
 
         await message.reply(buildButtonMessage(!!bonusMatch));
+        await handleThread(message, !!bonusMatch, threadQuestionText, threadMetadata);
     }
 }

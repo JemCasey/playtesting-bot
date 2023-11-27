@@ -22,6 +22,8 @@ const updateBonusThreadCommand = db.prepare('UPDATE bonus SET thread_id = ? WHER
 const getTossupThreadQuery = db.prepare('SELECT thread_id FROM tossup WHERE question_id = ?');
 const getBonusThreadQuery = db.prepare('SELECT thread_id FROM bonus WHERE question_id = ?');
 const getTossupBuzzesQuery = db.prepare('SELECT clue_index, value, characters_revealed FROM buzz WHERE question_id = ? ORDER BY clue_index');
+const getTossupCategoryCountQuery = db.prepare('SELECT COUNT(*) AS category_count FROM tossup WHERE author_id = ? AND server_id = ? AND category = ?');
+const getBonusCategoryCountQuery = db.prepare('SELECT COUNT(*) AS category_count FROM bonus WHERE author_id = ? AND server_id = ? AND category = ?');
 
 type nullableString = string | null | undefined;
 
@@ -272,4 +274,11 @@ export const getToFirstIndicator = (clue:string) => {
     } else {
         return `${clue.substring(0, defaultSize)}${clue.length > defaultSize ? '...' : ''}`;
     }
+}
+
+export function getCategoryCount(authorId: string, serverId: string | undefined, category:string, isBonus:boolean):number {
+    if (isBonus)
+        return (getBonusCategoryCountQuery.get(authorId, serverId, category) as any).category_count as number;
+    else
+        return (getTossupCategoryCountQuery.get(authorId, serverId, category) as any).category_count as number;
 }
