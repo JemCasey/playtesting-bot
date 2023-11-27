@@ -40,14 +40,15 @@ export function getTable(columns: string[], data: any[]) {
 
     data.forEach(d => {
         for (const [i, val] of d.entries()) {
-            if (i === 0) {               
-                if (columns[i] === CATEGORY)
-                    tableString += `${getCategoryEmoji(val)} **${val}** `;
-                if (columns[i] === AUTHOR)
-                    tableString += `**<@${val}>** `;
-            } else {
-                tableString += `\t*${columns[i]}*: **${val == null || val === '' ? 'N/A' : val}**`;
-            }
+            if (i > 0)
+                tableString += '\t';
+
+            if (columns[i] === CATEGORY)
+                tableString += `${getCategoryEmoji(val)} **${val}** `;
+            else if (columns[i] === AUTHOR)
+                tableString += `**<@${val}>** `;
+            else
+                tableString += `${columns[i]}: **${val == null || val === '' ? 'N/A' : val}**`;
         }
 
         tableString += '\n';

@@ -28,8 +28,8 @@ type nullableString = string | null | undefined;
 export const removeSpoilers = (text: string) => text.replaceAll('||', '');
 export const shortenAnswerline = (answerline: string) => removeSpoilers(answerline.replace(/ \[.+\]/, '').replace(/ \(.+\)/, '')).trim();
 export const removeBonusValue = (bonusPart: string) => bonusPart.replace(/\|{0,2}\[10\|{0,2}[emh]?\|{0,2}]\|{0,2} ?/, '');
-export const formatPercent = (value: number | null | undefined, minimumFractionDigits:number = 2) => value == null || value == undefined ? "" : value.toLocaleString(undefined, { style: 'percent', minimumFractionDigits });
-export const formatDecimal = (value: number | null | undefined) => value == null || value == undefined ? "" : value?.toFixed(2);
+export const formatPercent = (value: number | null | undefined, minimumIntegerDigits:number | undefined = undefined, minimumFractionDigits:number = 0) => value == null || value == undefined ? "" : value.toLocaleString(undefined, { style: 'percent', minimumFractionDigits, minimumIntegerDigits });
+export const formatDecimal = (value: number | null | undefined, fractionDigits:number = 0) => value == null || value == undefined ? "" : value?.toFixed(fractionDigits);
 
 export enum ServerChannelType {
     Playtesting = 1,
@@ -225,7 +225,7 @@ export const getTossupSummary = (questionId: string, questionParts: string[], an
         let correctBuzzes = buzzpoint.buzzes?.filter(b => b.value > 0)?.length || 0;
         let incorrectBuzzes = buzzpoint.buzzes?.filter(b => b.value <= 0)?.length || 0;
 
-        buzzSummaries.push(`${formatPercent(cumulativeCharacters / totalCharacters, 0)} mark (||${questionParts[buzzpoint.index].substring(0, 30)}||): ${correctBuzzes} correct buzz${correctBuzzes !== 1 ? "es" : ""}, ${incorrectBuzzes} incorrect buzz${incorrectBuzzes !== 1 ? "es" : ""}`)
+        buzzSummaries.push(`${formatPercent(cumulativeCharacters / totalCharacters)} mark (||${questionParts[buzzpoint.index].substring(0, 30)}||): ${correctBuzzes} correct buzz${correctBuzzes !== 1 ? "es" : ""}, ${incorrectBuzzes} incorrect buzz${incorrectBuzzes !== 1 ? "es" : ""}`)
     }
 
     return `## Results\n` +
