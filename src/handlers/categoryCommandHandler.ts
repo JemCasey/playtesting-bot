@@ -8,12 +8,12 @@ export default async function handleCategoryCommand(message:Message<boolean>) {
     if (message.guildId) {
         const rawCategoryData = getTossupCategoryData(message.guildId!);
         const categoryData = rawCategoryData.map(d => Object.values({
-            total_questions: String(d.total_questions).padStart(3, '0'),
-            total_plays: String(d.total_plays).padStart(3, '0'),
+            total_questions: String(d.total_questions).padStart(3, ' '),
+            total_plays: String(d.total_plays).padStart(3, ' '),
             conversion_rate: formatPercent(d.conversion_rate, 2),
             neg_rate: formatPercent(d.neg_rate, 2),
-            average_buzz: formatDecimal(d.average_buzz).padStart(3, '0'),
-            earliest_buzz: String(d.earliest_buzz).padStart(3, '0'),
+            average_buzz: formatDecimal(d.average_buzz).padStart(3, ' '),
+            earliest_buzz: String(d.earliest_buzz).padStart(3, ' '),
             category: d.category
         }));
         const tossupTable = getTable(
@@ -21,9 +21,9 @@ export default async function handleCategoryCommand(message:Message<boolean>) {
             categoryData
         );
         const bonusCategoryData = getBonusCategoryData(message.guildId!).map(d => Object.values({
-            total_questions: String(d.total_questions).padStart(3, '0'),
-            total_plays: d.total_plays.toFixed(0).padStart(3, '0'),
-            ppb: formatDecimal(d.ppb).padStart(2, '0'),
+            total_questions: String(d.total_questions).padStart(3, ' '),
+            total_plays: d.total_plays.toFixed(0).padStart(3, ' '),
+            ppb: formatDecimal(d.ppb).padStart(2, ' '),
             easy_conversion: formatPercent(d.easy_conversion, 2),
             medium_conversion: formatPercent(d.medium_conversion, 2),
             hard_conversion: formatPercent(d.hard_conversion, 2),

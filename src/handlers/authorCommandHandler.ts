@@ -7,8 +7,8 @@ import { AUTHOR } from "src/constants";
 export default async function handleAuthorCommand(message:Message<boolean>) {
     if (message.guildId) {
         const categoryData = getTossupAuthorData(message.guildId!).map(d => Object.values({
-            total_questions: String(d.total_questions).padStart(3, '0'),
-            total_plays: d.total_plays.toFixed(0).padStart(3, '0'),
+            total_questions: String(d.total_questions).padStart(3, ' '),
+            total_plays: d.total_plays.toFixed(0).padStart(3, ' '),
             conversion_rate: formatPercent(d.conversion_rate),
             neg_rate: formatPercent(d.neg_rate),
             average_buzz: formatDecimal(d.average_buzz),
@@ -20,9 +20,9 @@ export default async function handleAuthorCommand(message:Message<boolean>) {
             categoryData
         );
         const bonusAuthorData = getBonusAuthorData(message.guildId!).map(d => Object.values({
-            total_questions: String(d.total_questions).padStart(3, '0'),
-            total_plays: d.total_plays.toFixed(0).padStart(3, '0'),
-            ppb: formatDecimal(d.ppb).padStart(2, '0'),
+            total_questions: String(d.total_questions).padStart(3, ' '),
+            total_plays: d.total_plays.toFixed(0).padStart(3, ' '),
+            ppb: formatDecimal(d.ppb).padStart(2, ' '),
             easy_conversion: formatPercent(d.easy_conversion, 2),
             medium_conversion: formatPercent(d.medium_conversion, 2),
             hard_conversion: formatPercent(d.hard_conversion, 2),

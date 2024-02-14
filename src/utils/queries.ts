@@ -3,7 +3,7 @@ import Database from 'better-sqlite3';
 const db = new Database('database.db');
 
 const tossupCategoryDataQuery = db.prepare(`
-SELECT category, 
+SELECT COALESCE(category, 'Unknown') category, 
 count(distinct tossup.question_id) AS total_questions,
 count(distinct buzz.id) AS total_plays,
 cast(sum(iif(buzz.value > 0, 1, 0)) AS FLOAT) / count(distinct buzz.id) AS conversion_rate,
@@ -17,7 +17,7 @@ GROUP BY category
 ORDER BY count(distinct tossup.question_id) DESC`);
 
 const bonusCategoryDataQuery = db.prepare(`
-SELECT category, 
+SELECT COALESCE(category, 'Unknown') category, 
 count(distinct bonus.question_id) AS total_questions,
 cast(count(distinct bonus_direct.id) as float) / 3 AS total_plays,
 cast(sum(bonus_direct.value) AS FLOAT) / (cast(count(distinct bonus_direct.id) as FLOAT) / 3) AS ppb,

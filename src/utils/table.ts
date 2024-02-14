@@ -39,16 +39,18 @@ export function getTable(columns: string[], data: any[]) {
     let tableString = '';
 
     data.forEach(d => {
+        tableString += '`';
+
         for (const [i, val] of d.entries()) {
             if (i > 0)
                 tableString += '\t';
 
             if (columns[i] === CATEGORY)
-                tableString += `${getCategoryEmoji(val)} **${val}** `;
+                tableString += `\` ${getCategoryEmoji(val)} **${val}**`;
             else if (columns[i] === AUTHOR)
-                tableString += `**<@${val}>** `;
+                tableString += `\` <@${val}>`;
             else
-                tableString += `${columns[i]}: **${val == null || val === '' ? 'N/A' : val}**`;
+                tableString += `${columns[i]}: ${val == null || val === '' ? 'N/A' : val}`;
         }
 
         tableString += '\n';
