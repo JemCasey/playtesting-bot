@@ -41,6 +41,10 @@ export default async function handleTossupPlaytest(message: Message<boolean>, cl
         await message.author.send(getSilentMessage(`ANSWER: ${removeSpoilers(userProgress.answer)}`));
         await message.author.send(getEmbeddedMessage("Were you correct? Type `y`/`yes` or `n`/`no`. If you'd like to indicate your answer, you can put it in parenthesis at the end of your message, e.g. `y (foo)`", true));
     } else if (message.content.toLowerCase().startsWith('e') || ((message.content.toLowerCase().startsWith('y') || message.content.toLowerCase().startsWith('n')) && userProgress.grade)) {
+        if (message.content.toLowerCase().startsWith('e')) {
+            userProgress.index = userProgress.questionParts.length - 1;
+        }
+
         const key = KeySingleton.getInstance().getKey(message);
         const note = message.content.match(/\((.+)\)/);
         const resultChannel = getServerChannels(userProgress.serverId).find(s => s.channel_id === userProgress.channelId);
