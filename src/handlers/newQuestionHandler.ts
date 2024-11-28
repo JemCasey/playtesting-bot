@@ -38,6 +38,7 @@ async function handleReacts(message:Message, isBonus: boolean) {
     if (isBonus) {
 		try {
             // const alphaEmoji = (letter: string) => (String.fromCodePoint(127462 + parseInt(letter, 36) - 10));
+            await message.react("<:bonus:1311819077504733274>");
             await message.react("<:easy_part:1311811914916954243>");
             await message.react("<:medium_part:1311811928192192543>");
             await message.react("<:hard_part:1311811943727632399>");
@@ -46,6 +47,7 @@ async function handleReacts(message:Message, isBonus: boolean) {
 		}
     } else {
 		try {
+			await message.react("<:tossup:1311819091987791904>");
 			await message.react("<:ten_points:1311811889314926652>");
 			await message.react("<:zero_points:1311811903625887786>");
 		} catch (error) {
