@@ -1,7 +1,8 @@
-import { Message } from "discord.js";
+import { Message, Application } from "discord.js";
 import { BONUS_DIFFICULTY_REGEX, BONUS_REGEX, TOSSUP_REGEX } from "src/constants";
 import KeySingleton from "src/services/keySingleton";
 import { buildButtonMessage, getCategoryCount, getServerChannels, getTossupParts, removeSpoilers, saveBonus, saveTossup, shortenAnswerline } from "src/utils";
+import { client } from "src/bot";
 
 const extractCategory = (metadata:string | undefined) => {
     if (!metadata)
@@ -35,25 +36,30 @@ async function handleThread(message:Message, isBonus: boolean, question:string, 
 }
 
 async function handleReacts(message:Message, isBonus: boolean) {
-    if (isBonus) {
-		try {
-            // const alphaEmoji = (letter: string) => (String.fromCodePoint(127462 + parseInt(letter, 36) - 10));
-            await message.react("<:bonus:1311819077504733274>");
-            await message.react("<:easy_part:1311811914916954243>");
-            await message.react("<:medium_part:1311811928192192543>");
-            await message.react("<:hard_part:1311811943727632399>");
-		} catch (error) {
-			console.error('One of the emojis failed to react:', error);
-		}
-    } else {
-		try {
-			await message.react("<:tossup:1311819091987791904>");
-			await message.react("<:ten_points:1311811889314926652>");
-			await message.react("<:zero_points:1311811903625887786>");
-		} catch (error) {
-			console.error('One of the emojis failed to react:', error);
-		}
-    }
+    client.application?.emojis.fetch().then(function(emojis) {
+        var reacts;
+        if (isBonus) {
+            reacts = ["bonus", "easy_part", "medium_part", "hard_part"];
+        } else {
+            reacts = ["tossup", "ten_points", "zero_points"];
+        }
+        // const emojiList = emojis.map((e, x) => `${x} = ${e} | ${e.name}`).join("\n");
+        // console.log(emojiList);
+        try {
+            reacts.forEach(function(react) {
+                // console.log(`Searching for react: ${react}`);
+                var react_emoji = emojis.find(emoji => emoji.name === react);
+                // console.log(`Found emoji: ${react_emoji}`);
+                if (react_emoji) {
+                    message.react(react_emoji?.id);
+                    // console.log(`Reacted with ${react_emoji.id}`);
+                }
+            });
+        } catch (error) {
+            console.error("One of the emojis failed to react:", error);
+        }
+    });
+
 }
 
 export default async function handleNewQuestion(message:Message<boolean>) {

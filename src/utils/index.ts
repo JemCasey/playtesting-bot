@@ -1,6 +1,6 @@
-import { 
-    ActionRowBuilder, BaseMessageOptions, ButtonBuilder, ButtonStyle, Collection, EmbedBuilder, 
-    Guild, Message, MessageCreateOptions, MessageFlags, TextChannel 
+import {
+    ActionRowBuilder, BaseMessageOptions, ButtonBuilder, ButtonStyle, Collection, EmbedBuilder,
+    Guild, Message, MessageCreateOptions, MessageFlags, TextChannel
 } from "discord.js";
 import Database from 'better-sqlite3';
 import { encrypt } from "./crypto";
@@ -265,7 +265,7 @@ export const getToFirstIndicator = (clue:string) => {
     const thisIndex = words.findIndex(w => w.toLocaleLowerCase() === 'this' || w.toLocaleLowerCase() === 'these');
     const defaultSize = 30;
 
-    // if "this" or "these" is in the string and isn't the first word, 
+    // if "this" or "these" is in the string and isn't the first word,
     // truncate after first pronoun: https://github.com/JemCasey/playtesting-bot/issues/8
     if (thisIndex > 0) {
         const endIndex = thisIndex + 2;
