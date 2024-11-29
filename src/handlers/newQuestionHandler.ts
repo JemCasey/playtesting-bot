@@ -41,7 +41,7 @@ async function handleReacts(message:Message, isBonus: boolean) {
         if (isBonus) {
             reacts = ["bonus", "easy_part", "medium_part", "hard_part"];
         } else {
-            reacts = ["tossup", "ten_points", "zero_points"];
+            reacts = ["tossup", "ten_points", "zero_points", "neg"];
         }
         // const emojiList = emojis.map((e, x) => `${x} = ${e} | ${e.name}`).join("\n");
         // console.log(emojiList);
