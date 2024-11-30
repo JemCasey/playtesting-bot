@@ -6,7 +6,8 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     server_id TEXT,
     channel_id TEXT,
-    result_channel_id TEXT
+    result_channel_id TEXT,
+    channel_type INT
   )
 `);
 

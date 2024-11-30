@@ -68,11 +68,13 @@ export default async function handleNewQuestion(message:Message<boolean>) {
     const playtestingChannels = getServerChannels(message.guild!.id);
     const key = KeySingleton.getInstance().getKey(message);
 
-    if (playtestingChannels.find(c => c.channel_id === message.channel.id) && (bonusMatch || tossupMatch)) {
+    const msgChannel = playtestingChannels.find(c => c.channel_id === message.channel.id);
+
+    if (msgChannel && (bonusMatch || tossupMatch)) {
         let threadQuestionText = '';
         let threadMetadata = '';
 
-        if (message.content.includes('!r')) { // If we only want reacts for playtesting, don't need to create a thread and save results
+        if (msgChannel.channel_type === 2) {
             await handleReacts(message, !!bonusMatch);
         } else {
             if (bonusMatch) {
