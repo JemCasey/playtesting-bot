@@ -1,6 +1,6 @@
-import { 
-    ActionRowBuilder, BaseMessageOptions, ButtonBuilder, ButtonStyle, Collection, EmbedBuilder, 
-    Guild, Message, MessageCreateOptions, MessageFlags, TextChannel 
+import {
+    ActionRowBuilder, BaseMessageOptions, ButtonBuilder, ButtonStyle, Collection, EmbedBuilder,
+    Guild, Message, MessageCreateOptions, MessageFlags, TextChannel
 } from "discord.js";
 import Database from 'better-sqlite3';
 import { encrypt } from "./crypto";
@@ -9,8 +9,8 @@ import { getBonusSummaryData } from "./queries";
 
 const db = new Database('database.db');
 
-const deleteServerChannelsCommand = db.prepare('DELETE FROM server_channel WHERE server_id = ?');
-const insertServerChannelCommand = db.prepare('INSERT INTO server_channel (server_id, channel_id, result_channel_id) VALUES (?, ?, ?)');
+export const deleteServerChannelsCommand = db.prepare('DELETE FROM server_channel WHERE server_id = ?');
+const insertServerChannelCommand = db.prepare('INSERT INTO server_channel (server_id, channel_id, result_channel_id, channel_type) VALUES (?, ?, ?, ?)');
 const getServerChannelsQuery = db.prepare('SELECT * FROM server_channel WHERE server_id = ?');
 const insertBuzzCommand = db.prepare('INSERT INTO buzz (server_id, question_id, author_id, user_id, clue_index, characters_revealed, value, answer_given) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
 const insertBonusDirectCommand = db.prepare('INSERT INTO bonus_direct (server_id, question_id, author_id, user_id, part, value, answer_given) VALUES (?, ?, ?, ?, ?, ?, ?)');
@@ -35,6 +35,7 @@ export const formatDecimal = (value: number | null | undefined, fractionDigits:n
 
 export enum ServerChannelType {
     Playtesting = 1,
+    Reacts = 2,
     Results
 }
 
@@ -47,6 +48,7 @@ export type ServerChannel = {
     server_id: string;
     channel_id: string;
     result_channel_id: string;
+    channel_type: number;
 }
 
 export type QuestionResult = {
@@ -141,18 +143,29 @@ export const saveBonusDirect = (serverId: string, questionId: string, authorId: 
     insertBonusDirectCommand.run(serverId, questionId, authorId, userId, part, value, answerGiven ? encrypt(answerGiven, key) : null);
 }
 
-export const saveServerChannelsFromMessage = (collected: Collection<string, Message<boolean>>, server: Guild) => {
+export const saveAsyncServerChannelsFromMessage = (collected: Collection<string, Message<boolean>>, server: Guild) => {
     let tags = collected?.first()?.content.split(' ') || [];
 
-    deleteServerChannelsCommand.run(server.id);
-
     tags.forEach((tag) => {
-        const [_, channelId, resultsChannelId] = tag.match(/<#(\d+)>\/<#(\d+)>/) || [];
+        const [_, channelId, resultsChannelId] = tag.match(/<#(\d+)>\s*\/\s*<#(\d+)>/) || [];
         const channel = server.channels.cache.find((channel) => channel.id === channelId)?.id;
         const resultsChannel = server.channels.cache.find((channel) => channel.id === channelId)?.id;
 
         if (channel && resultsChannel) {
-            insertServerChannelCommand.run(server.id, channelId, resultsChannelId);
+            insertServerChannelCommand.run(server.id, channelId, resultsChannelId, 1);
+        }
+    });
+}
+
+export const saveBulkServerChannelsFromMessage = (collected: Collection<string, Message<boolean>>, server: Guild) => {
+    let tags = collected?.first()?.content.split(' ') || [];
+
+    tags.forEach((tag) => {
+        const [_, channelId] = tag.match(/<#(\d+)>/) || [];
+        const channel = server.channels.cache.find((channel) => channel.id === channelId)?.id;
+
+        if (channel) {
+            insertServerChannelCommand.run(server.id, channelId, "", 2);
         }
     });
 }
@@ -185,6 +198,12 @@ export const getThreadAndUpdateSummary = async (userProgress: UserProgress, thre
             autoArchiveDuration: 60
         });
         updateThreadId(userProgress.questionId, userProgress.type, thread.id);
+
+        try {
+            await thread.members.add(userProgress.authorId);
+        } catch (error) {
+            console.error(`Error adding member to thread: ${error}`);
+        }
 
         const buttonMessage = await playtestingChannel.messages.fetch(userProgress.buttonMessageId);
 
@@ -265,7 +284,7 @@ export const getToFirstIndicator = (clue:string) => {
     const thisIndex = words.findIndex(w => w.toLocaleLowerCase() === 'this' || w.toLocaleLowerCase() === 'these');
     const defaultSize = 30;
 
-    // if "this" or "these" is in the string and isn't the first word, 
+    // if "this" or "these" is in the string and isn't the first word,
     // truncate after first pronoun: https://github.com/JemCasey/playtesting-bot/issues/8
     if (thisIndex > 0) {
         const endIndex = thisIndex + 2;

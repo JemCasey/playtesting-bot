@@ -16,7 +16,7 @@ export default async function handleAuthorCommand(message:Message<boolean>) {
             author_id: d.author_id
         }));
         const tossupTable = getTable(
-            [ 'Total', 'Total Plays', 'Conv. %', 'Neg %', 'Avg. Buzz', 'First Buzz', AUTHOR ], 
+            [ 'Total', 'Total Plays', 'Conv. %', 'Neg %', 'Avg. Buzz', 'First Buzz', AUTHOR ],
             categoryData
         );
         const bonusAuthorData = getBonusAuthorData(message.guildId!).map(d => Object.values({
@@ -29,7 +29,7 @@ export default async function handleAuthorCommand(message:Message<boolean>) {
             author_id: d.author_id
         }));
         const bonusTable = getTable(
-            [ 'Total', 'Total Plays', 'PPB', 'E%', 'M%', 'H%', AUTHOR ], 
+            [ 'Total', 'Total Plays', 'PPB', 'E%', 'M%', 'H%', AUTHOR ],
             bonusAuthorData
         );
 

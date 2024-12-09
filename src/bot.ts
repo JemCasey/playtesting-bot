@@ -11,7 +11,7 @@ import handleAuthorCommand from './handlers/authorCommandHandler';
 
 const userProgressMap = new Map<string, UserProgress>();
 
-const client = new Client({
+export const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildMessages,
@@ -41,7 +41,7 @@ client.on('messageCreate', async (message) => {
         } else if (message.content === '!category') {
             await handleCategoryCommand(message);
         } else if (message.content === '!author') {
-            await handleAuthorCommand(message);            
+            await handleAuthorCommand(message);
         } else {
             let setUserProgress = userProgressMap.set.bind(userProgressMap);
             let deleteUserProgress = userProgressMap.delete.bind(userProgressMap);

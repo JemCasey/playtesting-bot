@@ -47,32 +47,40 @@ export default async function handleBonusPlaytest(message: Message<boolean>, cli
             await message.author.send(getSilentMessage(removeBonusValue(removeSpoilers(userProgress.parts[index] || ''))));
         } else {
             const key = KeySingleton.getInstance().getKey(message);
-            const resultChannel = getServerChannels(userProgress.serverId).find(s => s.channel_id === userProgress.channelId);
-            let resultMessage = `<@${message.author.id}> `;
+            const resultChannel = getServerChannels(userProgress.serverId).find(s => (s.channel_id === userProgress.channelId && s.channel_type === 1));
+            let resultMessage = ``;
+            let prepartMessages: string[] = [];
             let partMessages: string[] = [];
             let totalPoints = 0;
 
             results.forEach((r: any, i: number) => {
                 let answer = shortenAnswerline(userProgress.answers[i]);
+                let prepartMessage = '';
                 let partMessage = '';
 
                 if (r.points > 0) {
                     totalPoints += r.points;
+                    prepartMessage += "✅";
                     partMessage += `got ||${answer}||`;
                 } else if (!r.passed) {
+                    prepartMessage += "❌";
                     partMessage += `missed ||${answer}||`;
                 } else {
+                    prepartMessage += "⭕";
                     partMessage += `passed ||${answer}||`;
                 }
- 
-                partMessage += (r.note ? ` (answer given: "||${r.note}||")` : '')
+
+                prepartMessages.push(prepartMessage);
+                partMessage += (r.note ? ` (answer given: "||${r.note}||")` : '');
                 partMessages.push(partMessage);
                 saveBonusDirect(userProgress.serverId, userProgress.questionId, userProgress.authorId, message.author.id, i + 1, r.points, r.note, key);
             });
 
-            resultMessage += partMessages.join(', ') + ` for a total of ${totalPoints} points`;
+            resultMessage += prepartMessages.join(' ');
+            resultMessage += ` <@${message.author.id}> scored ${totalPoints} points: `;
+            resultMessage += partMessages.join(', ');
 
-            const threadName = `Results for ${userProgress.authorName}'s bonus "${getToFirstIndicator(userProgress.leadin)}"`;
+            const threadName = `B | ${userProgress.authorName} | "${getToFirstIndicator(userProgress.leadin)}"`;
             const resultsChannel = client.channels.cache.get(resultChannel!.result_channel_id) as TextChannel;
             const playtestingChannel = client.channels.cache.get(userProgress.channelId) as TextChannel;
             const thread = await getThreadAndUpdateSummary(userProgress, threadName.slice(0, 100), resultsChannel, playtestingChannel);
@@ -81,7 +89,7 @@ export default async function handleBonusPlaytest(message: Message<boolean>, cli
 
             deleteUserProgress(message.author.id);
 
-            await message.author.send(getEmbeddedMessage(`Thanks, your result has been sent to <#${thread.id}>`, true));
+            await message.author.send(getEmbeddedMessage(`Your result has been sent to <#${thread.id}>.`, true));
         }
     }
 }

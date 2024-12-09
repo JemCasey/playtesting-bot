@@ -14,7 +14,7 @@
   "dependencies": {
     "better-sqlite3": "^8.4.0",
     "crypto": "^1.0.1",
-    "discord.js": "14.11.0",
+    "discord.js": "14.16.0",
     "dotenv": "^16.3.1",
     "radash": "^11.0.0"
   },

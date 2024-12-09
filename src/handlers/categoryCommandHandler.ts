@@ -17,7 +17,7 @@ export default async function handleCategoryCommand(message:Message<boolean>) {
             category: d.category
         }));
         const tossupTable = getTable(
-            [ 'Total', 'Total Plays', 'Conv. %', 'Neg %', 'Avg. Buzz', 'First Buzz', CATEGORY ], 
+            [ 'Total', 'Total Plays', 'Conv. %', 'Neg %', 'Avg. Buzz', 'First Buzz', CATEGORY ],
             categoryData
         );
         const bonusCategoryData = getBonusCategoryData(message.guildId!).map(d => Object.values({
@@ -30,7 +30,7 @@ export default async function handleCategoryCommand(message:Message<boolean>) {
             category: d.category
         }));
         const bonusTable = getTable(
-            [ 'Total', 'Total Plays', 'PPB', 'E%', 'M%', 'H%', CATEGORY], 
+            [ 'Total', 'Total Plays', 'PPB', 'E%', 'M%', 'H%', CATEGORY],
             bonusCategoryData
         );
 
