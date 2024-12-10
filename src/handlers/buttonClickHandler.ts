@@ -1,5 +1,5 @@
 import { Interaction } from "discord.js";
-import { BONUS_REGEX, TOSSUP_REGEX } from "src/constants";
+import { BONUS_DIFFICULTY_REGEX, BONUS_REGEX, TOSSUP_REGEX } from "src/constants";
 import { QuestionType, UserBonusProgress, UserProgress, UserTossupProgress, getEmbeddedMessage, getTossupParts, removeBonusValue, removeSpoilers } from "src/utils";
 
 export default async function handleButtonClick(interaction: Interaction, userProgress:  Map<string, UserProgress>, setUserProgress: (key: any, value: any) => void) {
@@ -15,7 +15,13 @@ export default async function handleButtonClick(interaction: Interaction, userPr
             if (userProgress.get(interaction.user.id)) {
                 await interaction.user.send(getEmbeddedMessage("You tried to start playtesting a question but have a different question reading in progress. Please complete that reading or type `x` to end it, then try again."));
             } else if (bonusMatch) {
-                const [_, leadin, part1, answer1, part2, answer2, part3, answer3] = bonusMatch;
+                const [_, leadin, part1, answer1, part2, answer2, part3, answer3, metadata, difficultyPart1, difficultyPart2, difficultyPart3] = bonusMatch;
+                const difficulty1Match = part1.match(BONUS_DIFFICULTY_REGEX) || [];
+                const difficulty2Match = part2.match(BONUS_DIFFICULTY_REGEX) || [];
+                const difficulty3Match = part3.match(BONUS_DIFFICULTY_REGEX) || [];
+                const difficulty1 = difficultyPart1 || difficulty1Match[1] || "e";
+                const difficulty2 = difficultyPart2 || difficulty2Match[1] || "m";
+                const difficulty3 = difficultyPart3 || difficulty3Match[1] || "h";
 
                 setUserProgress(interaction.user.id, {
                     type: QuestionType.Bonus,
@@ -29,6 +35,7 @@ export default async function handleButtonClick(interaction: Interaction, userPr
                     leadin,
                     parts: [part1, part2, part3],
                     answers: [answer1, answer2, answer3],
+                    difficulties: [difficulty1, difficulty2, difficulty3],
                     index: 0,
                     results: []
                 } as UserBonusProgress);

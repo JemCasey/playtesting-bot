@@ -49,34 +49,51 @@ export default async function handleBonusPlaytest(message: Message<boolean>, cli
             const key = KeySingleton.getInstance().getKey(message);
             const resultChannel = getServerChannels(userProgress.serverId).find(s => (s.channel_id === userProgress.channelId && s.channel_type === 1));
             let resultMessage = ``;
-            let prepartMessages: string[] = [];
+            let points_emoji_names: string[] = [];
+            let emoji_summary: string[] = [];
             let partMessages: string[] = [];
             let totalPoints = 0;
 
-            results.forEach((r: any, i: number) => {
+            results.forEach(async function(r: any, i: number) {
                 let answer = shortenAnswerline(userProgress.answers[i]);
-                let prepartMessage = '';
                 let partMessage = '';
+                var points_emoji_name = "";
 
                 if (r.points > 0) {
+                    points_emoji_name = "bonus_";
                     totalPoints += r.points;
-                    prepartMessage += "✅";
                     partMessage += `got ||${answer}||`;
                 } else if (!r.passed) {
-                    prepartMessage += "❌";
+                    points_emoji_name = "missed_";
                     partMessage += `missed ||${answer}||`;
                 } else {
-                    prepartMessage += "⭕";
+                    points_emoji_name = "missed_";
                     partMessage += `passed ||${answer}||`;
                 }
+                points_emoji_name += userProgress.difficulties[i]?.toUpperCase()
 
-                prepartMessages.push(prepartMessage);
-                partMessage += (r.note ? ` (answer given: "||${r.note}||")` : '');
+                points_emoji_names.push(points_emoji_name);
+                partMessage += (r.note ? ` (answer: "||${r.note}||")` : '');
                 partMessages.push(partMessage);
                 saveBonusDirect(userProgress.serverId, userProgress.questionId, userProgress.authorId, message.author.id, i + 1, r.points, r.note, key);
             });
 
-            resultMessage += prepartMessages.join(' ');
+            await client.application?.emojis.fetch().then(function(emojis) {
+                try {
+                    points_emoji_names.forEach(function(points_emoji_name) {
+                        // console.log(`Searching for emoji: ${points_emoji_name}`);
+                        var points_emoji = emojis.find(emoji => emoji.name === points_emoji_name);
+                        // console.log(`Found emoji: ${points_emoji}`);
+                        if (points_emoji) {
+                            emoji_summary.push(`${points_emoji}`);
+                        }
+                    });
+                } catch (error) {
+                    console.error("One or more of the bonus points emojis failed to fetch:", error);
+                }
+            });
+
+            resultMessage += emoji_summary.join(' ');
             resultMessage += ` <@${message.author.id}> scored ${totalPoints} points: `;
             resultMessage += partMessages.join(', ');
 

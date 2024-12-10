@@ -74,6 +74,7 @@ export type UserBonusProgress = UserProgress & {
     leadin: string;
     parts: string[];
     answers: string[];
+    difficulties: string[];
     results: QuestionResult[];
 }
 
@@ -117,7 +118,7 @@ export const getSilentMessage = (message: string): MessageCreateOptions => {
     };
 }
 
-type BonusPart = {
+export type BonusPart = {
     part: number;
     answer: string;
     difficulty: nullableString;
