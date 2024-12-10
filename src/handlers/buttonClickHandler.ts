@@ -2,7 +2,7 @@ import { Interaction } from "discord.js";
 import { BONUS_DIFFICULTY_REGEX, BONUS_REGEX, TOSSUP_REGEX } from "src/constants";
 import { QuestionType, UserBonusProgress, UserProgress, UserTossupProgress, getEmbeddedMessage, getTossupParts, removeBonusValue, removeSpoilers } from "src/utils";
 
-export default async function handleButtonClick(interaction: Interaction, userProgress:  Map<string, UserProgress>, setUserProgress: (key: any, value: any) => void) {
+export default async function handleButtonClick(interaction: Interaction, userProgress: Map<string, UserProgress>, setUserProgress: (key: any, value: any) => void) {
     if (interaction.isButton() && interaction.customId === 'play_question') {
         const message = await interaction.message.channel.messages.fetch(interaction.message.id);
 

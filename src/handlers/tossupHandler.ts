@@ -78,7 +78,7 @@ export default async function handleTossupPlaytest(message: Message<boolean>, cl
             }
         }
 
-        await client.application?.emojis.fetch().then(function(emojis) {
+        await client.application?.emojis.fetch().then(function (emojis) {
             try {
                 // console.log(`Searching for emoji: ${points_emoji_name}`);
                 points_emoji = emojis.find(emoji => emoji.name === points_emoji_name);
@@ -94,7 +94,7 @@ export default async function handleTossupPlaytest(message: Message<boolean>, cl
         resultMessage += ` <@${message.author.id}>`;
         if (!message.content.toLowerCase().startsWith('e')) {
             resultMessage += ` @ "||${userProgress.questionParts[buzzIndex]}||"${note ? `; answer: "||${sanitizedNote}||"` : ''}`;
-            resultMessage += (userProgress.guesses?.length > 0 ? ` — was thinking \"${userProgress.guesses.map(g => `||${g.guess}|| @ clue #${g.index + 1}`).join(', ')}\"`: '');
+            resultMessage += (userProgress.guesses?.length > 0 ? ` — was thinking \"${userProgress.guesses.map(g => `||${g.guess}|| @ clue #${g.index + 1}`).join(', ')}\"` : '');
         }
 
         while (countIndex-- > 0)

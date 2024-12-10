@@ -4,7 +4,7 @@ import KeySingleton from "src/services/keySingleton";
 import { buildButtonMessage, getCategoryCount, getServerChannels, getTossupParts, removeSpoilers, saveBonus, BonusPart, saveTossup, shortenAnswerline } from "src/utils";
 import { client } from "src/bot";
 
-const extractCategory = (metadata:string | undefined) => {
+const extractCategory = (metadata: string | undefined) => {
     if (!metadata)
         return "";
 
@@ -22,7 +22,7 @@ const extractCategory = (metadata:string | undefined) => {
     return "";
 }
 
-async function handleThread(message:Message, isBonus: boolean, question:string, metadata:string) {
+async function handleThread(message: Message, isBonus: boolean, question: string, metadata: string) {
     if (message.content.includes('!t')) {
         const thread = await message.startThread({
             name: metadata ?
@@ -35,8 +35,8 @@ async function handleThread(message:Message, isBonus: boolean, question:string, 
     }
 }
 
-async function handleReacts(message:Message, isBonus: boolean, parts: BonusPart[]) {
-    client.application?.emojis.fetch().then(function(emojis) {
+async function handleReacts(message: Message, isBonus: boolean, parts: BonusPart[]) {
+    client.application?.emojis.fetch().then(function (emojis) {
         var reacts = ["play_count"];
         if (isBonus) {
             for (var { part, difficulty, answer } of parts) {
@@ -52,7 +52,7 @@ async function handleReacts(message:Message, isBonus: boolean, parts: BonusPart[
         // const emojiList = emojis.map((e, x) => `${x} = ${e} | ${e.name}`).join("\n");
         // console.log(emojiList);
         try {
-            reacts.forEach(function(react) {
+            reacts.forEach(function (react) {
                 // console.log(`Searching for react: ${react}`);
                 var react_emoji = emojis.find(emoji => emoji.name === react);
                 // console.log(`Found emoji: ${react_emoji}`);
@@ -68,7 +68,7 @@ async function handleReacts(message:Message, isBonus: boolean, parts: BonusPart[
 
 }
 
-export default async function handleNewQuestion(message:Message<boolean>) {
+export default async function handleNewQuestion(message: Message<boolean>) {
     const bonusMatch = message.content.match(BONUS_REGEX);
     const tossupMatch = message.content.match(TOSSUP_REGEX);
     const playtestingChannels = getServerChannels(message.guild!.id);
@@ -80,9 +80,9 @@ export default async function handleNewQuestion(message:Message<boolean>) {
         let threadQuestionText = '';
         let threadMetadata = '';
         let difficulties = [
-            { part: 1, answer: "", difficulty: ""},
-            { part: 2, answer: "", difficulty: ""},
-            { part: 3, answer: "", difficulty: ""},
+            { part: 1, answer: "", difficulty: "" },
+            { part: 2, answer: "", difficulty: "" },
+            { part: 3, answer: "", difficulty: "" },
         ];
 
         if (bonusMatch) {
@@ -94,9 +94,9 @@ export default async function handleNewQuestion(message:Message<boolean>) {
             threadMetadata = metadata;
 
             difficulties = [
-                { part: 1, answer: shortenAnswerline(answer1), difficulty: difficultyPart1 || difficulty1Match[1] || "e"},
-                { part: 2, answer: shortenAnswerline(answer2), difficulty: difficultyPart2 || difficulty2Match[1] || "m"},
-                { part: 3, answer: shortenAnswerline(answer3), difficulty: difficultyPart3 || difficulty3Match[1] || "h"},
+                { part: 1, answer: shortenAnswerline(answer1), difficulty: difficultyPart1 || difficulty1Match[1] || "e" },
+                { part: 2, answer: shortenAnswerline(answer2), difficulty: difficultyPart2 || difficulty2Match[1] || "m" },
+                { part: 3, answer: shortenAnswerline(answer3), difficulty: difficultyPart3 || difficulty3Match[1] || "h" },
             ];
             if (msgChannel.channel_type === 2) {
                 await handleReacts(message, !!bonusMatch, difficulties);

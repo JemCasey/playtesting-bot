@@ -54,7 +54,7 @@ export default async function handleBonusPlaytest(message: Message<boolean>, cli
             let partMessages: string[] = [];
             let totalPoints = 0;
 
-            results.forEach(async function(r: any, i: number) {
+            results.forEach(async function (r: any, i: number) {
                 let answer = shortenAnswerline(userProgress.answers[i]);
                 let partMessage = '';
                 var points_emoji_name = "";
@@ -78,9 +78,9 @@ export default async function handleBonusPlaytest(message: Message<boolean>, cli
                 saveBonusDirect(userProgress.serverId, userProgress.questionId, userProgress.authorId, message.author.id, i + 1, r.points, r.note, key);
             });
 
-            await client.application?.emojis.fetch().then(function(emojis) {
+            await client.application?.emojis.fetch().then(function (emojis) {
                 try {
-                    points_emoji_names.forEach(function(points_emoji_name) {
+                    points_emoji_names.forEach(function (points_emoji_name) {
                         // console.log(`Searching for emoji: ${points_emoji_name}`);
                         var points_emoji = emojis.find(emoji => emoji.name === points_emoji_name);
                         // console.log(`Found emoji: ${points_emoji}`);
