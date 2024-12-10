@@ -8,6 +8,7 @@ export default async function handleConfig(message:Message<boolean>) {
     await msgChannel.send('First, configure the channels used for internal, asynchronous playtesting - where the results should be saved to a separate channel.');
     await msgChannel.send('List these channels in the form: `#playtesting-channel/#playtesting-results-channel #playtesting-channel-2/#playtesting-results-channel-2`.');
     await msgChannel.send('Make sure to add exactly one space between each set of playtesting and results channels. Note: Multiple playtesting channels can share a `playtesting-results-channel`.');
+    await msgChannel.send('To bypass asynchronous playtesting channels, type `#/#`.');
 
     try {
         let filter = (m: Message<boolean>) => m.author.id === message.author.id
@@ -26,6 +27,7 @@ export default async function handleConfig(message:Message<boolean>) {
         await msgChannel.send('Now, list the channels used for bulk playtesting - where playtesters will use reactions to indicate their results.');
         await msgChannel.send('List these channels in the form: `#playtesting-channel #playtesting-channel-2`.');
         await msgChannel.send('Do not repeat any channels from asynchronous playtesting. Make sure to add exactly one space between set of playtesting channels.');
+        await msgChannel.send('To bypass bulk playtesting channels, type `#/#`.');
 
         try {
             let filter = (m: Message<boolean>) => m.author.id === message.author.id
