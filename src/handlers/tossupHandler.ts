@@ -58,11 +58,43 @@ export default async function handleTossupPlaytest(message: Message<boolean>, cl
         if (message.content.toLowerCase().startsWith('e'))
             await message.author.send(getSilentMessage(`ANSWER: ${removeSpoilers(userProgress.answer)}`));
 
+        var points_emoji_name = "";
+        var points_emoji;
         if (message.content.toLowerCase().startsWith('e')) {
-            resultMessage = `⭕ <@${message.author.id}>`;
+            points_emoji_name = "tossup_DNC";
         } else {
-            resultMessage = `${value > 0 ? "✅" : "❌"} <@${message.author.id}> @ "||${userProgress.questionParts[buzzIndex]}||"${note ? `; answer: "||${sanitizedNote}||"` : ''}`
-            + (userProgress.guesses?.length > 0 ? ` — was thinking \"${userProgress.guesses.map(g => `||${g.guess}|| @ clue #${g.index + 1}`).join(', ')}\"`: '');
+            if (value > 0) {
+                if (value === 15) {
+                    points_emoji_name = "tossup_15";
+                } else if (value === 10) {
+                    points_emoji_name = "tossup_10";
+                }
+            } else {
+                if (value === 0) {
+                    points_emoji_name = "tossup_DNC";
+                } else {
+                    points_emoji_name = "tossup_neg5";
+                }
+            }
+        }
+
+        await client.application?.emojis.fetch().then(function(emojis) {
+            try {
+                // console.log(`Searching for emoji: ${points_emoji_name}`);
+                points_emoji = emojis.find(emoji => emoji.name === points_emoji_name);
+                // console.log(`Found emoji: ${points_emoji}`);
+                if (points_emoji) {
+                    resultMessage += `${points_emoji}`;
+                }
+            } catch (error) {
+                console.error("One or more of the tossup points emojis failed to fetch:", error);
+            }
+        });
+
+        resultMessage += ` <@${message.author.id}>`;
+        if (!message.content.toLowerCase().startsWith('e')) {
+            resultMessage += ` @ "||${userProgress.questionParts[buzzIndex]}||"${note ? `; answer: "||${sanitizedNote}||"` : ''}`;
+            resultMessage += (userProgress.guesses?.length > 0 ? ` — was thinking \"${userProgress.guesses.map(g => `||${g.guess}|| @ clue #${g.index + 1}`).join(', ')}\"`: '');
         }
 
         while (countIndex-- > 0)
