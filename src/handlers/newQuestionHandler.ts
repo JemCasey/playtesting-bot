@@ -8,6 +8,7 @@ import { reactEmojiList } from "src/utils/emojis";
 async function handleThread(channel_type: number, message: Message, isBonus: boolean, question: string, metadata: string, questionNumber: string = "") {
     if (message.content.includes('!t')) {
         let threadName = "Discussion Thread";
+        let categoryName = extractCategory(metadata);
 
         if (channel_type === 2) {
             threadName = metadata ?
@@ -15,7 +16,7 @@ async function handleThread(channel_type: number, message: Message, isBonus: boo
                 `"${question.substring(0, 30)}..."`;
         } else if (channel_type === 1) {
             threadName = metadata ?
-                `${removeSpoilers(metadata)} - ${isBonus ? "Bonus" : "Tossup"} ${getCategoryCount(message.author.id, message.guild?.id, extractCategory(metadata), isBonus)}`
+                `${removeSpoilers(metadata)} - ${isBonus ? "Bonus" : "Tossup"} ${getCategoryCount(message.author.id, message.guild?.id, categoryName, isBonus)}`
                 : `"${question.substring(0, 30)}..."`;
         }
 
@@ -25,6 +26,16 @@ async function handleThread(channel_type: number, message: Message, isBonus: boo
         });
         if (channel_type !== 2) {
             thread.members.add(message.author);
+        }
+
+        let headEditorRole = message.guild?.roles.cache.find(r => r.name === "Head Editor");
+        if (headEditorRole) {
+            thread.send("<@&" + headEditorRole?.id + ">");
+        }
+
+        let categoryRole = message.guild?.roles.cache.find(r => r.name === categoryName);
+        if (categoryRole) {
+            thread.send("<@&" + categoryRole?.id + ">");
         }
     }
 }

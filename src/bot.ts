@@ -36,11 +36,13 @@ client.on('messageCreate', async (message) => {
         if (message.author.id === config.DISCORD_APPLICATION_ID)
             return;
 
-        if (message.content === '!config') {
+        if (message.content.startsWith('!config')) {
             await handleConfig(message);
-        } else if (message.content === '!category') {
+        } else if (message.content.startsWith("!packet ") || message.content.startsWith("!round ") || message.content.startsWith("!read ")) {
+            // message.content.split(" ").slice(-1)[0];
+        } else if (message.content.startsWith('!category')) {
             await handleCategoryCommand(message);
-        } else if (message.content === '!author') {
+        } else if (message.content.startsWith('!author')) {
             await handleAuthorCommand(message);
         } else {
             let setUserProgress = userProgressMap.set.bind(userProgressMap);

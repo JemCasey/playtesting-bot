@@ -77,14 +77,15 @@ export default async function handleTossupPlaytest(message: Message<boolean>, cl
                 }
             }
         }
-
         let points_emoji = await getEmojiList([points_emoji_name]);
-        resultMessage += `${points_emoji}`;
 
-        resultMessage += ` <@${message.author.id}>`;
+        if (points_emoji) {
+            resultMessage += `${points_emoji} `;
+        }
+        resultMessage += `<@${message.author.id}>`;
         if (!message.content.toLowerCase().startsWith('e')) {
             resultMessage += ` @ "||${userProgress.questionParts[buzzIndex]}||"${note ? `; answer: "||${sanitizedNote}||"` : ''}`;
-            resultMessage += (userProgress.guesses?.length > 0 ? ` — was thinking \"${userProgress.guesses.map(g => `||${g.guess}|| @ clue #${g.index + 1}`).join(', ')}\"` : '');
+            resultMessage += (userProgress.guesses?.length > 0 ? ` — thinking \"${userProgress.guesses.map(g => `||${g.guess}|| @ clue #${g.index + 1}`).join(', ')}\"` : '');
         }
 
         while (countIndex-- > 0)
