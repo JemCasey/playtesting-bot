@@ -37,13 +37,15 @@ async function handleThread(message: Message, isBonus: boolean, question: string
 
 async function handleReacts(message: Message, isBonus: boolean, parts: BonusPart[]) {
     client.application?.emojis.fetch().then(function (emojis) {
-        var reacts = ["play_count"];
+        var reacts: string[] = [];
         if (isBonus) {
             for (var { part, difficulty, answer } of parts) {
                 reacts = [...reacts, "bonus_" + difficulty?.toUpperCase()];
             }
+            reacts = [...reacts, "bonus_0"];
         } else {
-            reacts = [...reacts,
+            reacts = [
+                "play_count",
                 "tossup_10", "tossup_0", "tossup_neg5",
                 "tossup_DNC",
                 // "tossup_FTP",
