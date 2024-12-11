@@ -3,6 +3,7 @@ import { BONUS_DIFFICULTY_REGEX, BONUS_REGEX, TOSSUP_REGEX } from "src/constants
 import KeySingleton from "src/services/keySingleton";
 import { buildButtonMessage, getCategoryCount, getServerChannels, getTossupParts, removeSpoilers, saveBonus, BonusPart, saveTossup, shortenAnswerline } from "src/utils";
 import { client } from "src/bot";
+import { reactEmojiList } from "src/utils/emojis";
 
 const extractCategory = (metadata: string | undefined) => {
     if (!metadata)
@@ -36,37 +37,22 @@ async function handleThread(message: Message, isBonus: boolean, question: string
 }
 
 async function handleReacts(message: Message, isBonus: boolean, parts: BonusPart[]) {
-    client.application?.emojis.fetch().then(function (emojis) {
-        var reacts: string[] = [];
-        if (isBonus) {
-            for (var { part, difficulty, answer } of parts) {
-                reacts = [...reacts, "bonus_" + difficulty?.toUpperCase()];
-            }
-            reacts = [...reacts, "bonus_0"];
-        } else {
-            reacts = [
-                "play_count",
-                "tossup_10", "tossup_0", "tossup_neg5",
-                "tossup_DNC",
-                // "tossup_FTP",
-            ];
+    var reacts: string[] = [];
+    if (isBonus) {
+        for (var { part, difficulty, answer } of parts) {
+            reacts = [...reacts, "bonus_" + difficulty?.toUpperCase()];
         }
-        // const emojiList = emojis.map((e, x) => `${x} = ${e} | ${e.name}`).join("\n");
-        // console.log(emojiList);
-        try {
-            reacts.forEach(function (react) {
-                // console.log(`Searching for react: ${react}`);
-                var react_emoji = emojis.find(emoji => emoji.name === react);
-                // console.log(`Found emoji: ${react_emoji}`);
-                if (react_emoji) {
-                    message.react(react_emoji?.id);
-                    // console.log(`Reacted with ${react_emoji.id}`);
-                }
-            });
-        } catch (error) {
-            console.error("One or more of the react emojis failed to fetch:", error);
-        }
-    });
+        reacts = [...reacts, "bonus_0"];
+    } else {
+        reacts = [
+            "play_count",
+            "tossup_10", "tossup_0", "tossup_neg5",
+            "tossup_DNC",
+            // "tossup_FTP",
+        ];
+    }
+
+    await reactEmojiList(message, reacts);
 
 }
 

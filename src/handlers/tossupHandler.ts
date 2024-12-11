@@ -1,6 +1,7 @@
 import { Client, Message, TextChannel } from "discord.js";
 import KeySingleton from "src/services/keySingleton";
 import { UserTossupProgress, getEmbeddedMessage, getServerChannels, getSilentMessage, getThreadAndUpdateSummary, getToFirstIndicator, removeSpoilers, saveBuzz, shortenAnswerline } from "src/utils";
+import { getEmojiList } from "src/utils/emojis";
 
 export default async function handleTossupPlaytest(message: Message<boolean>, client: Client<boolean>, userProgress: UserTossupProgress, setUserProgress: (key: string, value: UserTossupProgress) => void, deleteUserProgress: (key: any) => void) {
     if (message.content.toLowerCase().startsWith('x')) {
@@ -48,7 +49,7 @@ export default async function handleTossupPlaytest(message: Message<boolean>, cl
         const key = KeySingleton.getInstance().getKey(message);
         const note = message.content.match(/\((.+)\)/);
         const resultChannel = getServerChannels(userProgress.serverId).find(s => (s.channel_id === userProgress.channelId && s.channel_type === 1));
-        let resultMessage = '';
+        let resultMessage = "";
         let buzzIndex = userProgress.index >= userProgress.questionParts.length ? userProgress.questionParts.length - 1 : userProgress.index;
         let value = message.content.toLowerCase().startsWith('y') ? 10 : (buzzIndex >= userProgress.questionParts.length - 1 ? 0 : -5);
         let sanitizedNote = note ? note[1].replaceAll('||', '') : null;
@@ -59,7 +60,6 @@ export default async function handleTossupPlaytest(message: Message<boolean>, cl
             await message.author.send(getSilentMessage(`ANSWER: ${removeSpoilers(userProgress.answer)}`));
 
         var points_emoji_name = "";
-        var points_emoji;
         if (message.content.toLowerCase().startsWith('e')) {
             points_emoji_name = "tossup_DNC";
         } else {
@@ -78,18 +78,8 @@ export default async function handleTossupPlaytest(message: Message<boolean>, cl
             }
         }
 
-        await client.application?.emojis.fetch().then(function (emojis) {
-            try {
-                // console.log(`Searching for emoji: ${points_emoji_name}`);
-                points_emoji = emojis.find(emoji => emoji.name === points_emoji_name);
-                // console.log(`Found emoji: ${points_emoji}`);
-                if (points_emoji) {
-                    resultMessage += `${points_emoji}`;
-                }
-            } catch (error) {
-                console.error("One or more of the tossup points emojis failed to fetch:", error);
-            }
-        });
+        let points_emoji = await getEmojiList([points_emoji_name]);
+        resultMessage += `${points_emoji}`;
 
         resultMessage += ` <@${message.author.id}>`;
         if (!message.content.toLowerCase().startsWith('e')) {

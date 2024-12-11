@@ -1,6 +1,7 @@
 import { Client, Message, TextChannel } from "discord.js";
 import KeySingleton from "src/services/keySingleton";
 import { UserBonusProgress, getEmbeddedMessage, getServerChannels, getSilentMessage, getThreadAndUpdateSummary, getToFirstIndicator, removeBonusValue, removeSpoilers, saveBonusDirect, shortenAnswerline } from "src/utils";
+import { getEmojiList } from "src/utils/emojis";
 
 export default async function handleBonusPlaytest(message: Message<boolean>, client: Client<boolean>, userProgress: UserBonusProgress, setUserProgress: (key: any, value: any) => void, deleteUserProgress: (key: any) => void) {
     let validGradingResponse = userProgress.grade && (message.content.toLowerCase().startsWith('y') || message.content.toLowerCase().startsWith('n'));
@@ -50,7 +51,6 @@ export default async function handleBonusPlaytest(message: Message<boolean>, cli
             const resultChannel = getServerChannels(userProgress.serverId).find(s => (s.channel_id === userProgress.channelId && s.channel_type === 1));
             let resultMessage = ``;
             let points_emoji_names: string[] = [];
-            let emoji_summary: string[] = [];
             let partMessages: string[] = [];
             let totalPoints = 0;
 
@@ -78,20 +78,7 @@ export default async function handleBonusPlaytest(message: Message<boolean>, cli
                 saveBonusDirect(userProgress.serverId, userProgress.questionId, userProgress.authorId, message.author.id, i + 1, r.points, r.note, key);
             });
 
-            await client.application?.emojis.fetch().then(function (emojis) {
-                try {
-                    points_emoji_names.forEach(function (points_emoji_name) {
-                        // console.log(`Searching for emoji: ${points_emoji_name}`);
-                        var points_emoji = emojis.find(emoji => emoji.name === points_emoji_name);
-                        // console.log(`Found emoji: ${points_emoji}`);
-                        if (points_emoji) {
-                            emoji_summary.push(`${points_emoji}`);
-                        }
-                    });
-                } catch (error) {
-                    console.error("One or more of the bonus points emojis failed to fetch:", error);
-                }
-            });
+            let emoji_summary = await getEmojiList(points_emoji_names);
 
             resultMessage += emoji_summary.join(' ');
             resultMessage += ` <@${message.author.id}> scored ${totalPoints} points: `;

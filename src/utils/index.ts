@@ -7,6 +7,7 @@ import { encrypt } from "./crypto";
 import { sum, group, listify } from 'radash'
 import { getBonusSummaryData } from "./queries";
 import { client } from "src/bot";
+import { getEmojiList } from "src/utils/emojis";
 
 const db = new Database('database.db');
 
@@ -215,7 +216,7 @@ export const getThreadAndUpdateSummary = async (userProgress: UserProgress, thre
         if (userProgress.type === QuestionType.Tossup)
             thread.send(await getTossupSummary(userProgress.questionId, (userProgress as UserTossupProgress).questionParts, (userProgress as UserTossupProgress).answer, userProgress.questionUrl));
         else
-            thread.send(getBonusSummary(userProgress.questionId, userProgress.questionUrl));
+            thread.send(await getBonusSummary(userProgress.questionId, userProgress.questionUrl));
     } else {
         thread = resultsChannel.threads.cache.find(x => x.id === threadId);
         const resultsMessage = (await thread!.messages.fetch()).find(m => m.content.includes("## Results"));
@@ -224,7 +225,7 @@ export const getThreadAndUpdateSummary = async (userProgress: UserProgress, thre
             if (userProgress.type === QuestionType.Tossup)
                 resultsMessage.edit(await getTossupSummary(userProgress.questionId, (userProgress as UserTossupProgress).questionParts, (userProgress as UserTossupProgress).answer, userProgress.questionUrl));
             else
-                resultsMessage.edit(getBonusSummary(userProgress.questionId, userProgress.questionUrl));
+                resultsMessage.edit(await getBonusSummary(userProgress.questionId, userProgress.questionUrl));
 
         }
     }
@@ -246,25 +247,7 @@ export async function getTossupSummary(questionId: string, questionParts: string
     let point_values: number[] = [15, 10, 0, -5];
     let points_emoji_names: string[] = ["15", "10", "DNC", "neg5"];
     points_emoji_names = points_emoji_names.map(i => "tossup_" + i);
-    let points_emojis: string[] = [];
-
-    await client.application?.emojis.fetch().then(function (emojis) {
-        points_emoji_names.forEach(async function (points_emoji_name: string) {
-            try {
-                // console.log(`Searching for emoji: ${points_emoji_name}`);
-                var points_emoji = emojis.find(emoji => emoji.name === points_emoji_name);
-                // console.log(`Found emoji: ${points_emoji}`);
-                if (points_emoji) {
-                    points_emojis.push(`${points_emoji}`);
-                } else {
-                    points_emojis.push("");
-                }
-            } catch (error) {
-                console.error("One or more of the bonus points emojis failed to fetch:", error);
-                points_emojis.push("");
-            }
-        })
-    });
+    let points_emojis = await getEmojiList(points_emoji_names);
 
     groupedBuzzes.forEach(async function (buzzpoint) {
         let cumulativeCharacters = questionParts.slice(0, buzzpoint.index + 1).join('').length;
@@ -282,16 +265,29 @@ export async function getTossupSummary(questionId: string, questionParts: string
         tossupSummary += lineSummary + "\n";
     });
 
-    tossupSummary += `**Played:** ${buzzes.length}\t**Conv. %**: ${formatPercent(gets.length / buzzes.length)}\t**Neg %**: ${formatPercent(negs.length / buzzes.length)}\t**Avg. Buzz**: ${formatDecimal(sum(gets, b => b.characters_revealed) / gets.length)}\n` +
-        `### [Return to question](${questionUrl})`;
+    tossupSummary +=
+        `**Plays:** ${buzzes.length}\t**Conversion Rate**: ${formatPercent(gets.length / buzzes.length)}\t` +
+        `**Neg Rate**: ${formatPercent(negs.length / buzzes.length)}\t` +
+        `**Avg. Buzz**: ${formatDecimal(100 * (sum(gets, b => b.characters_revealed) / gets.length) / totalCharacters)}% ` +
+        `(${formatDecimal(sum(gets, b => b.characters_revealed) / gets.length)})\n` +
+        `### [Return to Question](${questionUrl})`;
 
     return tossupSummary;
 }
 
-export const getBonusSummary = (questionId: string, questionUrl: string) => {
+export async function getBonusSummary(questionId: string, questionUrl: string) {
     const bonusSummary = getBonusSummaryData(questionId) as any;
 
-    return `## Results\n**Total Plays**: ${bonusSummary.total_plays}\t**PPB**: ${bonusSummary.ppb.toFixed(2)}\t**Easy %**: ${formatPercent(bonusSummary.easy_conversion)}\t**Medium %**: ${formatPercent(bonusSummary.medium_conversion)}\t**Hard %**: ${formatPercent(bonusSummary.hard_conversion)}\n### [Return to question](${questionUrl})`
+    let points_emoji_names: string[] = ["E", "M", "H"];
+    points_emoji_names = points_emoji_names.map(i => "bonus_" + i);
+    let points_emojis = await getEmojiList(points_emoji_names);
+
+    return `## Results\n**Plays**: ${bonusSummary.total_plays}\t` +
+        `**PPB**: ${bonusSummary.ppb.toFixed(2)}\t` +
+        `**${points_emojis[0] || "Easy"}** ${formatPercent(bonusSummary.easy_conversion)}\t` +
+        `**${points_emojis[1] || "Medium"}** ${formatPercent(bonusSummary.medium_conversion)}\t` +
+        `**${points_emojis[2] || "Hard"} %** ${formatPercent(bonusSummary.hard_conversion)}\n` +
+        `### [Return to Question](${questionUrl})`
 }
 
 export const buildButtonMessage = (isBonus: boolean, threadUrl?: string): BaseMessageOptions => {
