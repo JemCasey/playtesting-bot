@@ -34,6 +34,25 @@ export const shortenAnswerline = (answerline: string) => removeSpoilers(answerli
 export const removeBonusValue = (bonusPart: string) => bonusPart.replace(/\|{0,2}\[10\|{0,2}[emh]?\|{0,2}]\|{0,2} ?/, '');
 export const formatPercent = (value: number | null | undefined, minimumIntegerDigits: number | undefined = undefined, minimumFractionDigits: number = 0) => value == null || value == undefined ? "" : value.toLocaleString(undefined, { style: 'percent', minimumFractionDigits, minimumIntegerDigits });
 export const formatDecimal = (value: number | null | undefined, fractionDigits: number = 0) => value == null || value == undefined ? "" : value?.toFixed(fractionDigits);
+export const isNumeric = (value: string) => (/^-?\d+$/.test(value));
+
+export const extractCategory = (metadata: string | undefined) => {
+    if (!metadata)
+        return "";
+
+    metadata = removeSpoilers(metadata);
+    let results = metadata.match(/([A-Z]{2,3}), (.*)/);
+
+    if (results)
+        return results[2].trim();
+
+    results = metadata.match(/(.*), ([A-Z]{2,3})/);
+
+    if (results)
+        return results[1].trim();
+
+    return "";
+}
 
 export enum ServerChannelType {
     Playtesting = 1,
@@ -209,14 +228,16 @@ export const getThreadAndUpdateSummary = async (userProgress: UserProgress, thre
         }
 
         const buttonMessage = await playtestingChannel.messages.fetch(userProgress.buttonMessageId);
+        const buttonLabel = "Play " + (!!(userProgress.type === QuestionType.Bonus) ? "Bonus" : "Tossup");
+        if (buttonMessage) {
+            buttonMessage.edit(buildButtonMessage(buttonLabel, "play_question", thread.url));
+        }
 
-        if (buttonMessage)
-            buttonMessage.edit(buildButtonMessage(userProgress.type === QuestionType.Bonus, thread.url));
-
-        if (userProgress.type === QuestionType.Tossup)
+        if (userProgress.type === QuestionType.Tossup) {
             thread.send(await getTossupSummary(userProgress.questionId, (userProgress as UserTossupProgress).questionParts, (userProgress as UserTossupProgress).answer, userProgress.questionUrl));
-        else
+        } else {
             thread.send(await getBonusSummary(userProgress.questionId, userProgress.questionUrl));
+        }
     } else {
         thread = resultsChannel.threads.cache.find(x => x.id === threadId);
         const resultsMessage = (await thread!.messages.fetch()).find(m => m.content.includes("## Results"));
@@ -290,18 +311,27 @@ export async function getBonusSummary(questionId: string, questionUrl: string) {
         `### [Return to Question](${questionUrl})`
 }
 
-export const buildButtonMessage = (isBonus: boolean, threadUrl?: string): BaseMessageOptions => {
-    const buttonLabel = 'Play ' + (isBonus ? "Bonus" : "Tossup");
-    const buttons = new ActionRowBuilder().addComponents(new ButtonBuilder()
+export const buildButtonMessage = (buttonLabel: string, buttonID: string = "play_question", threadUrl?: string, overwrite: boolean = false): BaseMessageOptions => {
+    let buttons = new ActionRowBuilder().addComponents(new ButtonBuilder()
         .setStyle(ButtonStyle.Primary)
         .setLabel(buttonLabel)
-        .setCustomId('play_question'));
+        .setCustomId(buttonID)
+    );
 
     if (threadUrl) {
-        buttons.addComponents(new ButtonBuilder()
-            .setStyle(ButtonStyle.Link)
-            .setLabel("Go to Results")
-            .setURL(threadUrl))
+        if (overwrite) {
+            buttons.setComponents(new ButtonBuilder()
+                .setStyle(ButtonStyle.Link)
+                .setLabel(buttonLabel)
+                .setURL(threadUrl)
+            );
+        } else {
+            buttons.addComponents(new ButtonBuilder()
+                .setStyle(ButtonStyle.Link)
+                .setLabel("Results")
+                .setURL(threadUrl)
+            );
+        }
     }
 
     return { components: [buttons] } as BaseMessageOptions;

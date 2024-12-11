@@ -1,6 +1,6 @@
 import { Interaction } from "discord.js";
 import { BONUS_DIFFICULTY_REGEX, BONUS_REGEX, TOSSUP_REGEX } from "src/constants";
-import { QuestionType, UserBonusProgress, UserProgress, UserTossupProgress, getEmbeddedMessage, getTossupParts, removeBonusValue, removeSpoilers } from "src/utils";
+import { buildButtonMessage, QuestionType, UserBonusProgress, UserProgress, UserTossupProgress, getEmbeddedMessage, getTossupParts, removeBonusValue, removeSpoilers, extractCategory, isNumeric } from "src/utils";
 
 export default async function handleButtonClick(interaction: Interaction, userProgress: Map<string, UserProgress>, setUserProgress: (key: any, value: any) => void) {
     if (interaction.isButton() && interaction.customId === 'play_question') {
@@ -69,6 +69,35 @@ export default async function handleButtonClick(interaction: Interaction, userPr
                     await interaction.user.send(getEmbeddedMessage("Oops, looks like the question wasn't properly spoiler tagged. Let the author know so they can fix!"));
                 }
             }
+        }
+    } else if (interaction.isButton() && interaction.customId === 'bulk_thread') {
+        const message = await interaction.message.channel.messages.fetch(interaction.message.id);
+
+        if (message?.reference?.messageId) {
+            const questionMessage = await interaction.message.channel.messages.fetch(message.reference.messageId);
+            const bonusMatch = questionMessage.content.match(BONUS_REGEX);
+            const tossupMatch = questionMessage.content.match(TOSSUP_REGEX);
+            let threadName = "Discussion Thread";
+
+            if (bonusMatch) {
+                let [_, leadin, part1, answer1, part2, answer2, part3, answer3, metadata, difficultyPart1, difficultyPart2, difficultyPart3] = bonusMatch;
+                let questionNumber = leadin.charAt(0);
+                threadName = metadata ?
+                    `B${isNumeric(questionNumber) ? questionNumber: ""} - ${removeSpoilers(metadata)}` :
+                    `T"${leadin.substring(0, 30)}..."`;
+            } else if (tossupMatch) {
+                let [_, question, answer, metadata] = tossupMatch;
+                let questionNumber = question.charAt(0);
+                threadName = metadata ?
+                    `${isNumeric(questionNumber) ? questionNumber: ""} - ${removeSpoilers(metadata)}` :
+                    `"${question.substring(0, 30)}..."`;
+            }
+            const thread = await questionMessage.startThread({
+                name: threadName,
+                autoArchiveDuration: 60
+            });
+
+            message.edit(buildButtonMessage("Discussion Thread", "bulk_thread", thread.url, true));
         }
     }
 
