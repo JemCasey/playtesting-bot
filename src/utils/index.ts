@@ -6,6 +6,8 @@ import Database from 'better-sqlite3';
 import { encrypt } from "./crypto";
 import { sum, group, listify } from 'radash'
 import { getBonusSummaryData } from "./queries";
+import { client } from "src/bot";
+import { getEmojiList } from "src/utils/emojis";
 
 const db = new Database('database.db');
 
@@ -30,8 +32,27 @@ type nullableString = string | null | undefined;
 export const removeSpoilers = (text: string) => text.replaceAll('||', '');
 export const shortenAnswerline = (answerline: string) => removeSpoilers(answerline.replace(/ \[.+\]/, '').replace(/ \(.+\)/, '')).trim();
 export const removeBonusValue = (bonusPart: string) => bonusPart.replace(/\|{0,2}\[10\|{0,2}[emh]?\|{0,2}]\|{0,2} ?/, '');
-export const formatPercent = (value: number | null | undefined, minimumIntegerDigits:number | undefined = undefined, minimumFractionDigits:number = 0) => value == null || value == undefined ? "" : value.toLocaleString(undefined, { style: 'percent', minimumFractionDigits, minimumIntegerDigits });
-export const formatDecimal = (value: number | null | undefined, fractionDigits:number = 0) => value == null || value == undefined ? "" : value?.toFixed(fractionDigits);
+export const formatPercent = (value: number | null | undefined, minimumIntegerDigits: number | undefined = undefined, minimumFractionDigits: number = 0) => value == null || value == undefined ? "" : value.toLocaleString(undefined, { style: 'percent', minimumFractionDigits, minimumIntegerDigits });
+export const formatDecimal = (value: number | null | undefined, fractionDigits: number = 0) => value == null || value == undefined ? "" : value?.toFixed(fractionDigits);
+export const isNumeric = (value: string) => (/^-?\d+$/.test(value));
+
+export const extractCategory = (metadata: string | undefined) => {
+    if (!metadata)
+        return "";
+
+    metadata = removeSpoilers(metadata);
+    let results = metadata.match(/([A-Z]{2,3}), (.*)/);
+
+    if (results)
+        return results[2].trim();
+
+    results = metadata.match(/(.*), ([A-Z]{2,3})/);
+
+    if (results)
+        return results[1].trim();
+
+    return "";
+}
 
 export enum ServerChannelType {
     Playtesting = 1,
@@ -207,23 +228,25 @@ export const getThreadAndUpdateSummary = async (userProgress: UserProgress, thre
         }
 
         const buttonMessage = await playtestingChannel.messages.fetch(userProgress.buttonMessageId);
+        const buttonLabel = "Play " + (!!(userProgress.type === QuestionType.Bonus) ? "Bonus" : "Tossup");
+        if (buttonMessage) {
+            buttonMessage.edit(buildButtonMessage(buttonLabel, "play_question", thread.url));
+        }
 
-        if (buttonMessage)
-            buttonMessage.edit(buildButtonMessage(userProgress.type === QuestionType.Bonus, thread.url));
-
-        if (userProgress.type === QuestionType.Tossup)
-            thread.send(getTossupSummary(userProgress.questionId, (userProgress as UserTossupProgress).questionParts, (userProgress as UserTossupProgress).answer, userProgress.questionUrl));
-        else
-            thread.send(getBonusSummary(userProgress.questionId, userProgress.questionUrl));
+        if (userProgress.type === QuestionType.Tossup) {
+            thread.send(await getTossupSummary(userProgress.questionId, (userProgress as UserTossupProgress).questionParts, (userProgress as UserTossupProgress).answer, userProgress.questionUrl));
+        } else {
+            thread.send(await getBonusSummary(userProgress.questionId, userProgress.questionUrl));
+        }
     } else {
         thread = resultsChannel.threads.cache.find(x => x.id === threadId);
         const resultsMessage = (await thread!.messages.fetch()).find(m => m.content.includes("## Results"));
 
         if (resultsMessage) {
             if (userProgress.type === QuestionType.Tossup)
-                resultsMessage.edit(getTossupSummary(userProgress.questionId, (userProgress as UserTossupProgress).questionParts, (userProgress as UserTossupProgress).answer, userProgress.questionUrl));
+                resultsMessage.edit(await getTossupSummary(userProgress.questionId, (userProgress as UserTossupProgress).questionParts, (userProgress as UserTossupProgress).answer, userProgress.questionUrl));
             else
-                resultsMessage.edit(getBonusSummary(userProgress.questionId, userProgress.questionUrl));
+                resultsMessage.edit(await getBonusSummary(userProgress.questionId, userProgress.questionUrl));
 
         }
     }
@@ -231,7 +254,9 @@ export const getThreadAndUpdateSummary = async (userProgress: UserProgress, thre
     return thread!;
 }
 
-export const getTossupSummary = (questionId: string, questionParts: string[], answer: string, questionUrl: string) => {
+export async function getTossupSummary(questionId: string, questionParts: string[], answer: string, questionUrl: string) {
+    let tossupSummary = `## Results\n` +
+        `### ANSWER: ||${shortenAnswerline(answer)}||\n`;
     const buzzes = getTossupBuzzesQuery.all(questionId) as any[];
     const gets = buzzes.filter(b => b.value > 0);
     const negs = buzzes.filter(b => b.value < 0);
@@ -240,47 +265,79 @@ export const getTossupSummary = (questionId: string, questionParts: string[], an
         buzzes: value
     }));
     const totalCharacters = questionParts.join('').length;
-    let buzzSummaries:string[] = [];
+    let point_values: number[] = [15, 10, 0, -5];
+    let points_emoji_names: string[] = ["15", "10", "DNC", "neg5"];
+    points_emoji_names = points_emoji_names.map(i => "tossup_" + i);
+    let points_emojis = await getEmojiList(points_emoji_names);
 
-    for (let buzzpoint of groupedBuzzes) {
+    groupedBuzzes.forEach(async function (buzzpoint) {
         let cumulativeCharacters = questionParts.slice(0, buzzpoint.index + 1).join('').length;
-        let correctBuzzes = buzzpoint.buzzes?.filter(b => b.value > 0)?.length || 0;
-        let incorrectBuzzes = buzzpoint.buzzes?.filter(b => b.value <= 0)?.length || 0;
+        let point_value_msgs: string[] = [];
+        let lineSummary = `${formatPercent(cumulativeCharacters / totalCharacters)} | (||${questionParts[buzzpoint.index].substring(0, 30)}||): `;
 
-        buzzSummaries.push(`${formatPercent(cumulativeCharacters / totalCharacters)} mark (||${questionParts[buzzpoint.index].substring(0, 30)}||): ${correctBuzzes} correct buzz${correctBuzzes !== 1 ? "es" : ""}, ${incorrectBuzzes} incorrect buzz${incorrectBuzzes !== 1 ? "es" : ""}`)
-    }
+        point_values.forEach(async function (point_value: number, i) {
+            let point_value_count = buzzpoint.buzzes?.filter(b => b.value == point_value)?.length || 0;
+            if (point_value_count > 0) {
+                point_value_msgs.push(`${point_value_count} × ${points_emojis[i]}`);
+            }
+        })
 
-    return `## Results\n` +
-        `### ANSWER: ||${shortenAnswerline(answer)}||\n` +
-        `${buzzSummaries.join('\n')}\n` +
-        `**Played:** ${buzzes.length}\t**Conv. %**: ${formatPercent(gets.length / buzzes.length)}\t**Neg %**: ${formatPercent(negs.length / buzzes.length)}\t**Avg. Buzz**: ${formatDecimal(sum(gets, b => b.characters_revealed) / gets.length)}\n` +
-        `### [Return to question](${questionUrl})`;
+        lineSummary += point_value_msgs.join(' | ');
+        tossupSummary += lineSummary + "\n";
+    });
+
+    tossupSummary +=
+        `**Plays:** ${buzzes.length}\t**Conversion Rate**: ${formatPercent(gets.length / buzzes.length)}\t` +
+        `**Neg Rate**: ${formatPercent(negs.length / buzzes.length)}\t` +
+        `**Avg. Buzz**: ${formatDecimal(100 * (sum(gets, b => b.characters_revealed) / gets.length) / totalCharacters)}% ` +
+        `(${formatDecimal(sum(gets, b => b.characters_revealed) / gets.length)})\n` +
+        `### [Return to Question](${questionUrl})`;
+
+    return tossupSummary;
 }
 
-export const getBonusSummary = (questionId: string, questionUrl: string) => {
+export async function getBonusSummary(questionId: string, questionUrl: string) {
     const bonusSummary = getBonusSummaryData(questionId) as any;
 
-    return `## Results\n**Total Plays**: ${bonusSummary.total_plays}\t**PPB**: ${bonusSummary.ppb.toFixed(2)}\t**Easy %**: ${formatPercent(bonusSummary.easy_conversion)}\t**Medium %**: ${formatPercent(bonusSummary.medium_conversion)}\t**Hard %**: ${formatPercent(bonusSummary.hard_conversion)}\n### [Return to question](${questionUrl})`
+    let points_emoji_names: string[] = ["E", "M", "H"];
+    points_emoji_names = points_emoji_names.map(i => "bonus_" + i);
+    let points_emojis = await getEmojiList(points_emoji_names);
+
+    return `## Results\n**Plays**: ${bonusSummary.total_plays}\t` +
+        `**PPB**: ${bonusSummary.ppb.toFixed(2)}\t` +
+        `**${points_emojis[0] || "Easy"}** ${formatPercent(bonusSummary.easy_conversion)}\t` +
+        `**${points_emojis[1] || "Medium"}** ${formatPercent(bonusSummary.medium_conversion)}\t` +
+        `**${points_emojis[2] || "Hard"} %** ${formatPercent(bonusSummary.hard_conversion)}\n` +
+        `### [Return to Question](${questionUrl})`
 }
 
-export const buildButtonMessage = (isBonus:boolean, threadUrl?:string):BaseMessageOptions => {
-    const buttonLabel = 'Play ' + (isBonus ? "Bonus" : "Tossup");
-    const buttons = new ActionRowBuilder().addComponents(new ButtonBuilder()
+export const buildButtonMessage = (buttonLabel: string, buttonID: string = "play_question", threadUrl?: string, overwrite: boolean = false): BaseMessageOptions => {
+    let buttons = new ActionRowBuilder().addComponents(new ButtonBuilder()
         .setStyle(ButtonStyle.Primary)
         .setLabel(buttonLabel)
-        .setCustomId('play_question'));
+        .setCustomId(buttonID)
+    );
 
     if (threadUrl) {
-        buttons.addComponents(new ButtonBuilder()
-        .setStyle(ButtonStyle.Link)
-        .setLabel("Go to Results")
-        .setURL(threadUrl))
+        if (overwrite) {
+            buttons.setComponents(new ButtonBuilder()
+                .setStyle(ButtonStyle.Link)
+                .setLabel(buttonLabel)
+                .setURL(threadUrl)
+            );
+        } else {
+            buttons.addComponents(new ButtonBuilder()
+                .setStyle(ButtonStyle.Link)
+                .setLabel("Results")
+                .setURL(threadUrl)
+            );
+        }
     }
 
     return { components: [buttons] } as BaseMessageOptions;
 }
 
-export const getToFirstIndicator = (clue:string) => {
+export const getToFirstIndicator = (clue: string) => {
     const words = clue.split(' ');
     const thisIndex = words.findIndex(w => w.toLocaleLowerCase() === 'this' || w.toLocaleLowerCase() === 'these');
     const defaultSize = 30;
@@ -296,7 +353,7 @@ export const getToFirstIndicator = (clue:string) => {
     }
 }
 
-export function getCategoryCount(authorId: string, serverId: string | undefined, category:string, isBonus:boolean):number {
+export function getCategoryCount(authorId: string, serverId: string | undefined, category: string, isBonus: boolean): number {
     if (isBonus)
         return (getBonusCategoryCountQuery.get(authorId, serverId, category) as any).category_count as number;
     else
