@@ -1,6 +1,6 @@
 import { Interaction } from "discord.js";
 import { BONUS_DIFFICULTY_REGEX, BONUS_REGEX, TOSSUP_REGEX } from "src/constants";
-import { buildButtonMessage, QuestionType, UserBonusProgress, UserProgress, UserTossupProgress, getEmbeddedMessage, getTossupParts, removeBonusValue, removeSpoilers, extractCategory, isNumeric } from "src/utils";
+import { buildButtonMessage, QuestionType, UserBonusProgress, UserProgress, UserTossupProgress, getEmbeddedMessage, getTossupParts, removeBonusValue, removeSpoilers, getCategoryName, getCategoryRole, isNumeric } from "src/utils";
 
 export default async function handleButtonClick(interaction: Interaction, userProgress: Map<string, UserProgress>, setUserProgress: (key: any, value: any) => void) {
     if (interaction.isButton() && interaction.customId === 'play_question') {
@@ -77,27 +77,58 @@ export default async function handleButtonClick(interaction: Interaction, userPr
             const questionMessage = await interaction.message.channel.messages.fetch(message.reference.messageId);
             const bonusMatch = questionMessage.content.match(BONUS_REGEX);
             const tossupMatch = questionMessage.content.match(TOSSUP_REGEX);
+
             let threadName = "Discussion Thread";
+            let questionNumber = "";
+            let categoryName = "";
+            let categoryRoleName = "";
 
             if (bonusMatch) {
                 let [_, leadin, part1, answer1, part2, answer2, part3, answer3, metadata, difficultyPart1, difficultyPart2, difficultyPart3] = bonusMatch;
-                let questionNumber = leadin.charAt(0);
+                questionNumber = leadin.charAt(0);
+
+                if (metadata) {
+                    categoryName = getCategoryName(metadata);
+                    categoryRoleName = getCategoryRole(categoryName);
+                }
+
                 threadName = metadata ?
-                    `B${isNumeric(questionNumber) ? questionNumber: ""} - ${removeSpoilers(metadata)}` :
-                    `T"${leadin.substring(0, 30)}..."`;
+                    `B${isNumeric(questionNumber) ? questionNumber: ""} | ${categoryName}` :
+                    `B | ${leadin.substring(0, 30)}...`;
             } else if (tossupMatch) {
                 let [_, question, answer, metadata] = tossupMatch;
-                let questionNumber = question.charAt(0);
+                questionNumber = question.charAt(0);
+
+                if (metadata) {
+                    categoryName = getCategoryName(metadata);
+                    categoryRoleName = getCategoryRole(categoryName);
+                }
+
                 threadName = metadata ?
-                    `${isNumeric(questionNumber) ? questionNumber: ""} - ${removeSpoilers(metadata)}` :
-                    `"${question.substring(0, 30)}..."`;
+                    `T${isNumeric(questionNumber) ? questionNumber: ""} | ${categoryName}` :
+                    `T | ${question.substring(0, 30)}...`;
             }
+
             const thread = await questionMessage.startThread({
                 name: threadName,
                 autoArchiveDuration: 60
             });
 
             message.edit(buildButtonMessage("Discussion Thread", "bulk_thread", thread.url, true));
+
+            let roleMessage: string[] = [];
+            let headEditorRole = message.guild?.roles.cache.find(r => r.name === "Head Editor");
+            if (headEditorRole) {
+                roleMessage.push("<@&" + headEditorRole?.id + ">");
+            }
+            let categoryRole = message.guild?.roles.cache.find(r => r.name === categoryRoleName);
+            if (categoryRole) {
+                roleMessage.push("<@&" + categoryRole?.id + ">");
+            }
+
+            if (roleMessage.length > 0) {
+                thread.send(roleMessage.join(" "));
+            }
         }
     }
 

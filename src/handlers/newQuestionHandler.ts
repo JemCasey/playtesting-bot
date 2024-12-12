@@ -1,22 +1,23 @@
 import { Message, Application } from "discord.js";
 import { BONUS_DIFFICULTY_REGEX, BONUS_REGEX, TOSSUP_REGEX } from "src/constants";
 import KeySingleton from "src/services/keySingleton";
-import { buildButtonMessage, getCategoryCount, getServerChannels, getTossupParts, removeSpoilers, saveBonus, BonusPart, saveTossup, shortenAnswerline, extractCategory, isNumeric } from "src/utils";
+import { buildButtonMessage, getCategoryCount, getServerChannels, getTossupParts, removeSpoilers, saveBonus, BonusPart, saveTossup, shortenAnswerline, getCategoryName, getCategoryRole, isNumeric } from "src/utils";
 import { client } from "src/bot";
 import { reactEmojiList } from "src/utils/emojis";
 
 async function handleThread(channel_type: number, message: Message, isBonus: boolean, question: string, metadata: string, questionNumber: string = "") {
     if (message.content.includes('!t')) {
         let threadName = "Discussion Thread";
-        let categoryName = extractCategory(metadata);
+        let categoryName = getCategoryName(metadata);
+        let categoryRoleName = getCategoryRole(categoryName);
 
         if (channel_type === 2) {
             threadName = metadata ?
-                `${isBonus ? "B" : "T"}${questionNumber} - ${removeSpoilers(metadata)}` :
+                `${isBonus ? "B" : "T"}${questionNumber} | ${categoryName}` :
                 `"${question.substring(0, 30)}..."`;
         } else if (channel_type === 1) {
             threadName = metadata ?
-                `${removeSpoilers(metadata)} - ${isBonus ? "Bonus" : "Tossup"} ${getCategoryCount(message.author.id, message.guild?.id, categoryName, isBonus)}`
+                `${removeSpoilers(metadata)} | ${isBonus ? "B" : "T"}${getCategoryCount(message.author.id, message.guild?.id, categoryName, isBonus)}`
                 : `"${question.substring(0, 30)}..."`;
         }
 
@@ -24,18 +25,23 @@ async function handleThread(channel_type: number, message: Message, isBonus: boo
             name: threadName,
             autoArchiveDuration: 60
         });
+
         if (channel_type !== 2) {
             thread.members.add(message.author);
         }
 
+        let roleMessage: string[] = [];
         let headEditorRole = message.guild?.roles.cache.find(r => r.name === "Head Editor");
         if (headEditorRole) {
-            thread.send("<@&" + headEditorRole?.id + ">");
+            roleMessage.push("<@&" + headEditorRole?.id + ">");
+        }
+        let categoryRole = message.guild?.roles.cache.find(r => r.name === categoryRoleName);
+        if (categoryRole) {
+            roleMessage.push("<@&" + categoryRole?.id + ">");
         }
 
-        let categoryRole = message.guild?.roles.cache.find(r => r.name === categoryName);
-        if (categoryRole) {
-            thread.send("<@&" + categoryRole?.id + ">");
+        if (roleMessage.length > 0) {
+            thread.send(roleMessage.join(" "));
         }
     }
 }
@@ -95,7 +101,7 @@ export default async function handleNewQuestion(message: Message<boolean>) {
             if (msgChannel.channel_type === 2) {
                 await handleReacts(message, !!bonusMatch, difficulties);
             } else {
-                saveBonus(message.id, message.guildId!, message.author.id, extractCategory(metadata), difficulties, key);
+                saveBonus(message.id, message.guildId!, message.author.id, getCategoryName(metadata), difficulties, key);
             }
         } else if (tossupMatch) {
             const [_, question, answer, metadata] = tossupMatch;
@@ -114,7 +120,7 @@ export default async function handleNewQuestion(message: Message<boolean>) {
             if (msgChannel.channel_type === 2) {
                 await handleReacts(message, !!bonusMatch, difficulties);
             } else {
-                saveTossup(message.id, message.guildId!, message.author.id, questionLength, extractCategory(metadata), shortenAnswerline(answer), key);
+                saveTossup(message.id, message.guildId!, message.author.id, questionLength, getCategoryName(metadata), shortenAnswerline(answer), key);
             }
         }
 
@@ -128,7 +134,7 @@ export default async function handleNewQuestion(message: Message<boolean>) {
             buttonLabel = "Play " + (!!bonusMatch ? "Bonus" : "Tossup");
             await message.reply(buildButtonMessage(buttonLabel));
         }
-        await handleThread(msgChannel.channel_type, message, !!bonusMatch, threadQuestionText, threadMetadata, questionNumber);
+        await handleThread(msgChannel.channel_type, message, !!bonusMatch, threadQuestionText, threadMetadata, isNumeric(questionNumber) ? questionNumber: "");
 
     }
 }

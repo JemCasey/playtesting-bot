@@ -27,6 +27,13 @@ const getTossupBuzzesQuery = db.prepare('SELECT clue_index, value, characters_re
 const getTossupCategoryCountQuery = db.prepare('SELECT COUNT(*) AS category_count FROM tossup WHERE author_id = ? AND server_id = ? AND category = ?');
 const getBonusCategoryCountQuery = db.prepare('SELECT COUNT(*) AS category_count FROM bonus WHERE author_id = ? AND server_id = ? AND category = ?');
 
+const literature_names = ["literature", "lit", "drama", "poetry", "fiction"];
+const history_names = ["history", "historiography", "archeology"];
+const rmpss_names = ["religion", "myth", "phil", "social", "econ", "psych", "ling", "socio", "anthro", "law"]
+const arts_names = ["arts", "paint", "sculpt", "music", "classical", "auditory", "visual", "architecture", "photo", "film", "jazz", "opera", "dance"];
+const science_names = ["science", "bio", "chem", "physics", "math", "astro", "computer", "earth", "engineering", "ecology"];
+const other_names = ["other", "academic", "geography", "current", "events", "pop", "culture", "trash"];
+
 type nullableString = string | null | undefined;
 
 export const removeSpoilers = (text: string) => text.replaceAll('||', '');
@@ -36,22 +43,45 @@ export const formatPercent = (value: number | null | undefined, minimumIntegerDi
 export const formatDecimal = (value: number | null | undefined, fractionDigits: number = 0) => value == null || value == undefined ? "" : value?.toFixed(fractionDigits);
 export const isNumeric = (value: string) => (/^-?\d+$/.test(value));
 
-export const extractCategory = (metadata: string | undefined) => {
-    if (!metadata)
-        return "";
+export const getCategoryName = (metadata: string | undefined) => {
+    let category = "";
+    if (metadata) {
+        metadata = removeSpoilers(metadata);
+        let results = metadata.match(/([A-Z]{2,3}), (.*)/);
 
-    metadata = removeSpoilers(metadata);
-    let results = metadata.match(/([A-Z]{2,3}), (.*)/);
+        if (results) {
+            category = results[2].trim();
+        }
 
-    if (results)
-        return results[2].trim();
+        results = metadata.match(/(.*), ([A-Z]{2,3})/);
 
-    results = metadata.match(/(.*), ([A-Z]{2,3})/);
+        if (results) {
+            category = results[1].trim();
+        }
+    }
 
-    if (results)
-        return results[1].trim();
+    return category;
+}
 
-    return "";
+export const getCategoryRole = (category: string) => {
+    let categoryRole = "";
+    category = category.toLowerCase();
+
+    if (literature_names.some(v => category.includes(v))) {
+        categoryRole = "Literature";
+    } else if (history_names.some(v => category.includes(v))) {
+        categoryRole = "History";
+    } else if (arts_names.some(v => category.includes(v))) {
+        categoryRole = "Arts";
+    } else if (rmpss_names.some(v => category.includes(v))) {
+        categoryRole = "RMPSS";
+    } else if (science_names.some(v => category.includes(v))) {
+        categoryRole = "Science";
+    } else if (other_names.some(v => category.includes(v))) {
+        categoryRole = "Other";
+    }
+
+    return categoryRole;
 }
 
 export enum ServerChannelType {
@@ -273,7 +303,7 @@ export async function getTossupSummary(questionId: string, questionParts: string
     groupedBuzzes.forEach(async function (buzzpoint) {
         let cumulativeCharacters = questionParts.slice(0, buzzpoint.index + 1).join('').length;
         let point_value_msgs: string[] = [];
-        let lineSummary = `${formatPercent(cumulativeCharacters / totalCharacters)} | (||${questionParts[buzzpoint.index].substring(0, 30)}||): `;
+        let lineSummary = `${formatPercent(cumulativeCharacters / totalCharacters)} | (||${questionParts[buzzpoint.index].substring(0, 30)}||) | `;
 
         point_values.forEach(async function (point_value: number, i) {
             let point_value_count = buzzpoint.buzzes?.filter(b => b.value == point_value)?.length || 0;
@@ -287,7 +317,7 @@ export async function getTossupSummary(questionId: string, questionParts: string
     });
 
     tossupSummary +=
-        `**Plays:** ${buzzes.length}\t**Conversion Rate**: ${formatPercent(gets.length / buzzes.length)}\t` +
+        `\n**Plays:** ${buzzes.length}\t**Conversion Rate**: ${formatPercent(gets.length / buzzes.length)}\t` +
         `**Neg Rate**: ${formatPercent(negs.length / buzzes.length)}\t` +
         `**Avg. Buzz**: ${formatDecimal(100 * (sum(gets, b => b.characters_revealed) / gets.length) / totalCharacters)}% ` +
         `(${formatDecimal(sum(gets, b => b.characters_revealed) / gets.length)})\n` +
