@@ -6,7 +6,7 @@ import handleNewQuestion from './handlers/newQuestionHandler';
 import handleConfig from './handlers/configHandler';
 import handleButtonClick from './handlers/buttonClickHandler';
 import handleCategoryCommand from './handlers/categoryCommandHandler';
-import { QuestionType, UserBonusProgress, UserProgress, UserTossupProgress } from './utils';
+import { QuestionType, UserBonusProgress, UserProgress, UserTossupProgress, packetName, setPacketName } from './utils';
 import handleAuthorCommand from './handlers/authorCommandHandler';
 
 const userProgressMap = new Map<string, UserProgress>();
@@ -39,7 +39,14 @@ client.on('messageCreate', async (message) => {
         if (message.content.startsWith('!config')) {
             await handleConfig(message);
         } else if (message.content.startsWith("!packet ") || message.content.startsWith("!round ") || message.content.startsWith("!read ")) {
-            // message.content.split(" ").slice(-1)[0];
+            let packetName = message.content.split(" ").slice(-1)[0];
+            if (packetName.includes("reset") || packetName.includes("clear")) {
+                setPacketName("");
+                message.reply("Packet name cleared.");
+            } else {
+                setPacketName(packetName);
+                message.reply(`Now reading packet ${packetName}.`);
+            }
         } else if (message.content.startsWith('!category')) {
             await handleCategoryCommand(message);
         } else if (message.content.startsWith('!author')) {

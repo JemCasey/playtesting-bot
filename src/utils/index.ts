@@ -11,6 +11,11 @@ import { getEmojiList } from "src/utils/emojis";
 
 const db = new Database('database.db');
 
+export var packetName = "";
+export function setPacketName(desiredPacketName: string) {
+    packetName = desiredPacketName;
+}
+
 export const deleteServerChannelsCommand = db.prepare('DELETE FROM server_channel WHERE server_id = ?');
 const insertServerChannelCommand = db.prepare('INSERT INTO server_channel (server_id, channel_id, result_channel_id, channel_type) VALUES (?, ?, ?, ?)');
 const getServerChannelsQuery = db.prepare('SELECT * FROM server_channel WHERE server_id = ?');

@@ -1,7 +1,7 @@
 import { Message, Application } from "discord.js";
 import { BONUS_DIFFICULTY_REGEX, BONUS_REGEX, TOSSUP_REGEX } from "src/constants";
 import KeySingleton from "src/services/keySingleton";
-import { buildButtonMessage, getCategoryCount, getServerChannels, getTossupParts, removeSpoilers, saveBonus, BonusPart, saveTossup, shortenAnswerline, getCategoryName, getCategoryRole, isNumeric } from "src/utils";
+import { buildButtonMessage, getCategoryCount, getServerChannels, getTossupParts, removeSpoilers, saveBonus, BonusPart, saveTossup, shortenAnswerline, getCategoryName, getCategoryRole, isNumeric, packetName } from "src/utils";
 import { client } from "src/bot";
 import { reactEmojiList } from "src/utils/emojis";
 
@@ -13,11 +13,11 @@ async function handleThread(channel_type: number, message: Message, isBonus: boo
 
         if (channel_type === 2) {
             threadName = metadata ?
-                `${isBonus ? "B" : "T"}${questionNumber} | ${categoryName}` :
+                `${packetName ? packetName + "." : ""}${isBonus ? "B" : "T"}${questionNumber} | ${categoryName}` :
                 `"${question.substring(0, 30)}..."`;
         } else if (channel_type === 1) {
             threadName = metadata ?
-                `${removeSpoilers(metadata)} | ${isBonus ? "B" : "T"}${getCategoryCount(message.author.id, message.guild?.id, categoryName, isBonus)}`
+                `${packetName ? packetName + "." : ""}${removeSpoilers(metadata)} | ${isBonus ? "B" : "T"}${getCategoryCount(message.author.id, message.guild?.id, categoryName, isBonus)}`
                 : `"${question.substring(0, 30)}..."`;
         }
 

@@ -1,6 +1,6 @@
 import { Interaction } from "discord.js";
 import { BONUS_DIFFICULTY_REGEX, BONUS_REGEX, TOSSUP_REGEX } from "src/constants";
-import { buildButtonMessage, QuestionType, UserBonusProgress, UserProgress, UserTossupProgress, getEmbeddedMessage, getTossupParts, removeBonusValue, removeSpoilers, getCategoryName, getCategoryRole, isNumeric } from "src/utils";
+import { buildButtonMessage, QuestionType, UserBonusProgress, UserProgress, UserTossupProgress, getEmbeddedMessage, getTossupParts, removeBonusValue, removeSpoilers, getCategoryName, getCategoryRole, isNumeric, packetName } from "src/utils";
 
 export default async function handleButtonClick(interaction: Interaction, userProgress: Map<string, UserProgress>, setUserProgress: (key: any, value: any) => void) {
     if (interaction.isButton() && interaction.customId === 'play_question') {
@@ -93,7 +93,7 @@ export default async function handleButtonClick(interaction: Interaction, userPr
                 }
 
                 threadName = metadata ?
-                    `B${isNumeric(questionNumber) ? questionNumber: ""} | ${categoryName}` :
+                    `${packetName ? packetName + "." : ""}B${isNumeric(questionNumber) ? questionNumber: ""} | ${categoryName}` :
                     `B | ${leadin.substring(0, 30)}...`;
             } else if (tossupMatch) {
                 let [_, question, answer, metadata] = tossupMatch;
@@ -105,7 +105,7 @@ export default async function handleButtonClick(interaction: Interaction, userPr
                 }
 
                 threadName = metadata ?
-                    `T${isNumeric(questionNumber) ? questionNumber: ""} | ${categoryName}` :
+                    `${packetName ? packetName + "." : ""}T${isNumeric(questionNumber) ? questionNumber: ""} | ${categoryName}` :
                     `T | ${question.substring(0, 30)}...`;
             }
 
