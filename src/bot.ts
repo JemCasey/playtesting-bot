@@ -1,4 +1,4 @@
-import { Client, GatewayIntentBits, Partials, ChannelType, Interaction } from 'discord.js';
+import { Client, GatewayIntentBits, Partials, ChannelType, Interaction, TextChannel } from 'discord.js';
 import { config } from "./config";
 import handleTossupPlaytest from './handlers/tossupHandler';
 import handleBonusPlaytest from './handlers/bonusHandler';
@@ -6,7 +6,7 @@ import handleNewQuestion from './handlers/newQuestionHandler';
 import handleConfig from './handlers/configHandler';
 import handleButtonClick from './handlers/buttonClickHandler';
 import handleCategoryCommand from './handlers/categoryCommandHandler';
-import { QuestionType, UserBonusProgress, UserProgress, UserTossupProgress, packetName, setPacketName } from './utils';
+import { QuestionType, UserBonusProgress, UserProgress, UserTossupProgress, getServerChannels, packetName, setPacketName } from './utils';
 import handleAuthorCommand from './handlers/authorCommandHandler';
 
 const userProgressMap = new Map<string, UserProgress>();
@@ -38,14 +38,40 @@ client.on('messageCreate', async (message) => {
 
         if (message.content.startsWith('!config')) {
             await handleConfig(message);
-        } else if (message.content.startsWith("!packet ") || message.content.startsWith("!round ") || message.content.startsWith("!read ")) {
-            let packetName = message.content.split(" ").slice(-1)[0];
-            if (packetName.includes("reset") || packetName.includes("clear")) {
-                setPacketName("");
-                message.reply("Packet name cleared.");
+        } else if (message.content.startsWith("!packet") || message.content.startsWith("!round") || message.content.startsWith("!read")) {
+            let splits = message.content.split(" ");
+            if (splits.length > 1) {
+                let desiredPacketName = splits.slice(-1)[0];
+                if (desiredPacketName) {
+                    if (desiredPacketName.includes("reset") || desiredPacketName.includes("clear")) {
+                        setPacketName("");
+                        message.reply("Packet cleared.");
+                    } else {
+                        setPacketName(desiredPacketName);
+                        message.reply(`Now reading packet ${packetName}.`);
+                        const echoChannelId = getServerChannels(message.guild!.id).find(c => (c.channel_type === 3))?.channel_id;
+                        if (echoChannelId) {
+                            const echoChannel = (client.channels.cache.get(echoChannelId) as TextChannel);
+                            echoChannel.send(`# Packet ${packetName}`);
+                        }
+                    }
+                } else {
+                    if (message.content.startsWith("!packet") || message.content.startsWith("!round")) {
+                        if (packetName) {
+                            message.reply(`The current packet is ${packetName}.`);
+                        } else {
+                            message.reply("Packet not configured yet.");
+                        }
+                    }
+                }
             } else {
-                setPacketName(packetName);
-                message.reply(`Now reading packet ${packetName}.`);
+                if (message.content.startsWith("!packet") || message.content.startsWith("!round")) {
+                    if (packetName) {
+                        message.reply(`The current packet is ${packetName}.`);
+                    } else {
+                        message.reply("Packet not configured yet.");
+                    }
+                }
             }
         } else if (message.content.startsWith('!category')) {
             await handleCategoryCommand(message);

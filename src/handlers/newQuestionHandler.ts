@@ -1,7 +1,7 @@
-import { Message, Application } from "discord.js";
+import { Message, Application, TextChannel } from "discord.js";
 import { BONUS_DIFFICULTY_REGEX, BONUS_REGEX, TOSSUP_REGEX } from "src/constants";
 import KeySingleton from "src/services/keySingleton";
-import { buildButtonMessage, getCategoryCount, getServerChannels, getTossupParts, removeSpoilers, saveBonus, BonusPart, saveTossup, shortenAnswerline, getCategoryName, getCategoryRole, isNumeric, packetName } from "src/utils";
+import { buildButtonMessage, getCategoryCount, getServerChannels, getTossupParts, removeSpoilers, saveBonus, BonusPart, saveTossup, shortenAnswerline, getCategoryName, getCategoryRole, isNumeric, packetName, echoWhole } from "src/utils";
 import { client } from "src/bot";
 import { reactEmojiList } from "src/utils/emojis";
 
@@ -17,7 +17,7 @@ async function handleThread(channel_type: number, message: Message, isBonus: boo
                 `"${question.substring(0, 30)}..."`;
         } else if (channel_type === 1) {
             threadName = metadata ?
-                `${packetName ? packetName + "." : ""}${removeSpoilers(metadata)} | ${isBonus ? "B" : "T"}${getCategoryCount(message.author.id, message.guild?.id, categoryName, isBonus)}`
+                `${metadata} | ${isBonus ? "B" : "T"}${getCategoryCount(message.author.id, message.guild?.id, categoryName, isBonus)}`
                 : `"${question.substring(0, 30)}..."`;
         }
 
@@ -46,6 +46,18 @@ async function handleThread(channel_type: number, message: Message, isBonus: boo
     }
 }
 
+export async function echoQuestion(question: string, questionUrl: string, echoChannelId: string, echoWhole: boolean) {
+    const echoChannel = (client.channels.cache.get(echoChannelId) as TextChannel);
+    let echoURL = "";
+    await echoChannel.send(question.replace("!t", "").trim()).then( echoMessage => {
+        if (echoWhole) {
+            echoMessage.reply(buildButtonMessage("echo", "Go to Question", questionUrl));
+        }
+        echoURL = echoMessage.url;
+    });
+    return echoURL;
+}
+
 async function handleReacts(message: Message, isBonus: boolean, parts: BonusPart[]) {
     var reacts: string[] = [];
     if (isBonus) {
@@ -63,7 +75,6 @@ async function handleReacts(message: Message, isBonus: boolean, parts: BonusPart
     }
 
     await reactEmojiList(message, reacts);
-
 }
 
 export default async function handleNewQuestion(message: Message<boolean>) {
@@ -72,7 +83,7 @@ export default async function handleNewQuestion(message: Message<boolean>) {
     const playtestingChannels = getServerChannels(message.guild!.id);
     const key = KeySingleton.getInstance().getKey(message);
 
-    const msgChannel = playtestingChannels.find(c => c.channel_id === message.channel.id);
+    const msgChannel = playtestingChannels.find(c => (c.channel_id === message.channel.id));
 
     if (msgChannel && (bonusMatch || tossupMatch)) {
         let threadQuestionText = '';
@@ -83,6 +94,7 @@ export default async function handleNewQuestion(message: Message<boolean>) {
             { part: 3, answer: "", difficulty: "" },
         ];
         let questionNumber = "";
+        let questionEcho = "";
 
         if (bonusMatch) {
             const [_, leadin, part1, answer1, part2, answer2, part3, answer3, metadata, difficultyPart1, difficultyPart2, difficultyPart3] = bonusMatch;
@@ -90,7 +102,7 @@ export default async function handleNewQuestion(message: Message<boolean>) {
             const difficulty2Match = part2.match(BONUS_DIFFICULTY_REGEX) || [];
             const difficulty3Match = part3.match(BONUS_DIFFICULTY_REGEX) || [];
             threadQuestionText = part1;
-            threadMetadata = metadata;
+            threadMetadata = removeSpoilers(metadata);
             questionNumber = leadin.charAt(0);
 
             difficulties = [
@@ -100,8 +112,8 @@ export default async function handleNewQuestion(message: Message<boolean>) {
             ];
             if (msgChannel.channel_type === 2) {
                 await handleReacts(message, !!bonusMatch, difficulties);
-            } else {
-                saveBonus(message.id, message.guildId!, message.author.id, getCategoryName(metadata), difficulties, key);
+            } else if (msgChannel.channel_type === 1) {
+                saveBonus(message.id, message.guildId!, message.author.id, getCategoryName(threadMetadata), difficulties, key);
             }
         } else if (tossupMatch) {
             const [_, question, answer, metadata] = tossupMatch;
@@ -110,7 +122,7 @@ export default async function handleNewQuestion(message: Message<boolean>) {
                 return a + b.length;
             }, 0);
             threadQuestionText = question;
-            threadMetadata = metadata;
+            threadMetadata = removeSpoilers(metadata);
             questionNumber = question.charAt(0);
 
             // if a tossup was sent that has 2 or fewer spoiler tagged sections, assume that it's not meant to be played
@@ -119,22 +131,32 @@ export default async function handleNewQuestion(message: Message<boolean>) {
 
             if (msgChannel.channel_type === 2) {
                 await handleReacts(message, !!bonusMatch, difficulties);
-            } else {
-                saveTossup(message.id, message.guildId!, message.author.id, questionLength, getCategoryName(metadata), shortenAnswerline(answer), key);
+            } else if (msgChannel.channel_type === 1) {
+                saveTossup(message.id, message.guildId!, message.author.id, questionLength, getCategoryName(threadMetadata), shortenAnswerline(answer), key);
             }
         }
 
-        let buttonLabel = "";
-        if (msgChannel.channel_type === 2) {
-            if (!message.content.includes('!t')) {
-                buttonLabel = "Create Discussion Thread";
-                await message.reply(buildButtonMessage(buttonLabel, "bulk_thread"));
+        if (msgChannel.channel_type !== 3) {
+            if (msgChannel.channel_type === 2) {
+                const echoChannelId = playtestingChannels.find(c => (c.channel_type === 3))?.channel_id;
+                if (echoChannelId) {
+                    if (echoWhole) {
+                        questionEcho = message.content.replaceAll("!t", "").trim();
+                    } else {
+                        questionEcho = "### [" + (!!bonusMatch ? "Bonus" : "Tossup") + (isNumeric(questionNumber) ? (" " + questionNumber) : "") + " - " + getCategoryName(threadMetadata) + "](" + message.url + ")";
+                    }
+                    echoQuestion(questionEcho, message.url, echoChannelId, echoWhole).then(echoURL => {
+                        if (message.content.includes('!t')) {
+                            message.reply(buildButtonMessage("echo", "Return to List", echoURL));
+                        } else {
+                            message.reply(buildButtonMessage("bulk_thread", "Create Discussion Thread", "", "Go to Index", echoURL));
+                        }
+                    });
+                }
+            } else if (msgChannel.channel_type === 1) {
+                await message.reply(buildButtonMessage("play_question", "Play " + (!!bonusMatch ? "Bonus" : "Tossup")));
             }
-        } else {
-            buttonLabel = "Play " + (!!bonusMatch ? "Bonus" : "Tossup");
-            await message.reply(buildButtonMessage(buttonLabel));
+            await handleThread(msgChannel.channel_type, message, !!bonusMatch, threadQuestionText, threadMetadata, isNumeric(questionNumber) ? questionNumber: "");
         }
-        await handleThread(msgChannel.channel_type, message, !!bonusMatch, threadQuestionText, threadMetadata, isNumeric(questionNumber) ? questionNumber: "");
-
     }
 }

@@ -16,6 +16,11 @@ export function setPacketName(desiredPacketName: string) {
     packetName = desiredPacketName;
 }
 
+export var echoWhole = false;
+export function setEchoWhole(echoWholeSetting: boolean) {
+    echoWhole = echoWholeSetting;
+}
+
 export const deleteServerChannelsCommand = db.prepare('DELETE FROM server_channel WHERE server_id = ?');
 const insertServerChannelCommand = db.prepare('INSERT INTO server_channel (server_id, channel_id, result_channel_id, channel_type) VALUES (?, ?, ?, ?)');
 const getServerChannelsQuery = db.prepare('SELECT * FROM server_channel WHERE server_id = ?');
@@ -90,8 +95,9 @@ export const getCategoryRole = (category: string) => {
 }
 
 export enum ServerChannelType {
-    Playtesting = 1,
-    Reacts = 2,
+    Async = 1, // Asynchronous playtesting (internal for editors; question-based)
+    Bulk = 2, // Bulk playtesting (external for playtesters; packet-based)
+    Echo = 3, // Echo for bulk playtesting (external for playtesters; packet-based)
     Results
 }
 
@@ -202,29 +208,43 @@ export const saveBonusDirect = (serverId: string, questionId: string, authorId: 
 
 export const saveAsyncServerChannelsFromMessage = (collected: Collection<string, Message<boolean>>, server: Guild) => {
     let tags = collected?.first()?.content.split(' ') || [];
+    let currentServerChannels = getServerChannels(server?.id);
 
+    let saved_channels: string[] = [];
     tags.forEach((tag) => {
         const [_, channelId, resultsChannelId] = tag.match(/<#(\d+)>\s*\/\s*<#(\d+)>/) || [];
-        const channel = server.channels.cache.find((channel) => channel.id === channelId)?.id;
-        const resultsChannel = server.channels.cache.find((channel) => channel.id === channelId)?.id;
+        const channel = server.channels.cache.find((channel) => channel.id === channelId);
+        const resultsChannel = server.channels.cache.find((channel) => channel.id === resultsChannelId);
 
-        if (channel && resultsChannel) {
-            insertServerChannelCommand.run(server.id, channelId, resultsChannelId, 1);
+        if (channel?.id && resultsChannel?.id) {
+            if (!currentServerChannels.map(s => s.channel_id).includes(channelId)) { // Avoid duplicate channels
+                insertServerChannelCommand.run(server.id, channelId, resultsChannelId, 1);
+                saved_channels.push(`\`${channel.name}\``);
+            }
         }
     });
+
+    return saved_channels;
 }
 
-export const saveBulkServerChannelsFromMessage = (collected: Collection<string, Message<boolean>>, server: Guild) => {
+export const saveBulkServerChannelsFromMessage = (collected: Collection<string, Message<boolean>>, server: Guild, channel_type: number) => {
     let tags = collected?.first()?.content.split(' ') || [];
+    let currentServerChannels = getServerChannels(server?.id);
 
-    tags.forEach((tag) => {
+    let saved_channels: string[] = [];
+    tags.forEach(function(tag) {
         const [_, channelId] = tag.match(/<#(\d+)>/) || [];
-        const channel = server.channels.cache.find((channel) => channel.id === channelId)?.id;
+        const channel = server.channels.cache.find((channel) => channel.id === channelId);
 
-        if (channel) {
-            insertServerChannelCommand.run(server.id, channelId, "", 2);
+        if (channel?.id) {
+            if (!currentServerChannels.map(s => s.channel_id).includes(channelId)) { // Avoid duplicate channels
+                insertServerChannelCommand.run(server.id, channelId, "", channel_type);
+                saved_channels.push(`\`${channel.name}\``);
+            }
         }
     });
+
+    return saved_channels;
 }
 
 export const getServerChannels = (serverId: string) => {
@@ -265,7 +285,7 @@ export const getThreadAndUpdateSummary = async (userProgress: UserProgress, thre
         const buttonMessage = await playtestingChannel.messages.fetch(userProgress.buttonMessageId);
         const buttonLabel = "Play " + (!!(userProgress.type === QuestionType.Bonus) ? "Bonus" : "Tossup");
         if (buttonMessage) {
-            buttonMessage.edit(buildButtonMessage(buttonLabel, "play_question", thread.url));
+            buttonMessage.edit(buildButtonMessage("play_question", buttonLabel, "", "Results", thread.url));
         }
 
         if (userProgress.type === QuestionType.Tossup) {
@@ -346,27 +366,29 @@ export async function getBonusSummary(questionId: string, questionUrl: string) {
         `### [Return to Question](${questionUrl})`
 }
 
-export const buildButtonMessage = (buttonLabel: string, buttonID: string = "play_question", threadUrl?: string, overwrite: boolean = false): BaseMessageOptions => {
-    let buttons = new ActionRowBuilder().addComponents(new ButtonBuilder()
-        .setStyle(ButtonStyle.Primary)
-        .setLabel(buttonLabel)
-        .setCustomId(buttonID)
-    );
+export const buildButtonMessage = (buttonID: string = "play_question", primaryButtonLabel: string = "", primaryButtonURL: string = "", secondaryButtonLabel: string = "Results", secondaryButtonURL: string = ""): BaseMessageOptions => {
 
-    if (threadUrl) {
-        if (overwrite) {
-            buttons.setComponents(new ButtonBuilder()
-                .setStyle(ButtonStyle.Link)
-                .setLabel(buttonLabel)
-                .setURL(threadUrl)
-            );
-        } else {
-            buttons.addComponents(new ButtonBuilder()
-                .setStyle(ButtonStyle.Link)
-                .setLabel("Results")
-                .setURL(threadUrl)
-            );
-        }
+    let buttons;
+    if (primaryButtonLabel && primaryButtonURL) {
+        buttons = new ActionRowBuilder().addComponents(new ButtonBuilder()
+            .setStyle(ButtonStyle.Link)
+            .setLabel(primaryButtonLabel)
+            .setURL(primaryButtonURL)
+        );
+    } else {
+        buttons = new ActionRowBuilder().addComponents(new ButtonBuilder()
+            .setStyle(ButtonStyle.Primary)
+            .setLabel(primaryButtonLabel)
+            .setCustomId(buttonID)
+        );
+    }
+
+    if (secondaryButtonLabel && secondaryButtonURL) {
+        buttons.addComponents(new ButtonBuilder()
+            .setStyle(ButtonStyle.Link)
+            .setLabel(secondaryButtonLabel)
+            .setURL(secondaryButtonURL)
+        );
     }
 
     return { components: [buttons] } as BaseMessageOptions;

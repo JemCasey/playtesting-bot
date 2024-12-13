@@ -114,7 +114,7 @@ export default async function handleButtonClick(interaction: Interaction, userPr
                 autoArchiveDuration: 60
             });
 
-            message.edit(buildButtonMessage("Discussion Thread", "bulk_thread", thread.url, true));
+            message.edit(buildButtonMessage("bulk_thread", "Discussion Thread", thread.url));
 
             let roleMessage: string[] = [];
             let headEditorRole = message.guild?.roles.cache.find(r => r.name === "Head Editor");
