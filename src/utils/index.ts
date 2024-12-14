@@ -6,20 +6,26 @@ import Database from 'better-sqlite3';
 import { encrypt } from "./crypto";
 import { sum, group, listify } from 'radash'
 import { getBonusSummaryData } from "./queries";
-import { client } from "src/bot";
 import { getEmojiList } from "src/utils/emojis";
 
+
+export var serverSettings: ServerSettings[] = [];
+
+export function setPacketName(serverId: string, desiredPacketName: string) {
+    let thisServer = serverSettings.find(ss => ss.serverId == serverId);
+    if (thisServer) {
+        thisServer.packetName = desiredPacketName;
+    }
+}
+
+export function setEchoWhole(serverId: string, echoWholeSetting: boolean) {
+    let thisServer = serverSettings.find(ss => ss.serverId == serverId);
+    if (thisServer) {
+        thisServer.echoWhole = echoWholeSetting;
+    }
+}
+
 const db = new Database('database.db');
-
-export var packetName = "";
-export function setPacketName(desiredPacketName: string) {
-    packetName = desiredPacketName;
-}
-
-export var echoWhole = false;
-export function setEchoWhole(echoWholeSetting: boolean) {
-    echoWhole = echoWholeSetting;
-}
 
 export const deleteServerChannelsCommand = db.prepare('DELETE FROM server_channel WHERE server_id = ?');
 const insertServerChannelCommand = db.prepare('INSERT INTO server_channel (server_id, channel_id, result_channel_id, channel_type) VALUES (?, ?, ?, ?)');
@@ -94,6 +100,12 @@ export const getCategoryRole = (category: string) => {
     return categoryRole;
 }
 
+export type ServerSettings = {
+    serverId: string;
+    packetName: string;
+    echoWhole: boolean;
+}
+
 export enum ServerChannelType {
     Async = 1, // Asynchronous playtesting (internal for editors; question-based)
     Bulk = 2, // Bulk playtesting (external for playtesters; packet-based)
@@ -107,7 +119,7 @@ export enum QuestionType {
 }
 
 export type ServerChannel = {
-    server_id: string;
+    serverId: string;
     channel_id: string;
     result_channel_id: string;
     channel_type: number;

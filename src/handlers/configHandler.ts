@@ -1,6 +1,6 @@
 import { Message, TextChannel } from "discord.js";
 import { SECRET_ROLE } from "src/constants";
-import { saveAsyncServerChannelsFromMessage, saveBulkServerChannelsFromMessage, deleteServerChannelsCommand, setEchoWhole } from "src/utils";
+import { saveAsyncServerChannelsFromMessage, saveBulkServerChannelsFromMessage, deleteServerChannelsCommand, serverSettings, ServerSettings, setEchoWhole } from "src/utils";
 
 export default async function handleConfig(message: Message<boolean>) {
     const msgChannel = (await message.channel.fetch() as TextChannel);
@@ -59,11 +59,21 @@ export default async function handleConfig(message: Message<boolean>) {
                             max: 1
                         });
 
+                        let serverSetting : ServerSettings;
                         if (collected?.first()?.content.includes("1")) {
-                            setEchoWhole(false);
+                            serverSetting = {
+                                serverId: message.guildId!,
+                                packetName: "",
+                                echoWhole: false,
+                            };
                         } else {
-                            setEchoWhole(true);
+                            serverSetting = {
+                                serverId: message.guildId!,
+                                packetName: "",
+                                echoWhole: true,
+                            };
                         }
+                        serverSettings.push(serverSetting);
                     } catch {
                         await msgChannel.send("An error occurred, please try again.");
                     }

@@ -6,7 +6,7 @@ import handleNewQuestion from './handlers/newQuestionHandler';
 import handleConfig from './handlers/configHandler';
 import handleButtonClick from './handlers/buttonClickHandler';
 import handleCategoryCommand from './handlers/categoryCommandHandler';
-import { QuestionType, UserBonusProgress, UserProgress, UserTossupProgress, getServerChannels, packetName, setPacketName } from './utils';
+import { QuestionType, UserBonusProgress, UserProgress, UserTossupProgress, getServerChannels, serverSettings, setPacketName } from './utils';
 import handleAuthorCommand from './handlers/authorCommandHandler';
 
 const userProgressMap = new Map<string, UserProgress>();
@@ -39,26 +39,27 @@ client.on('messageCreate', async (message) => {
         if (message.content.startsWith('!config')) {
             await handleConfig(message);
         } else if (message.content.startsWith("!packet") || message.content.startsWith("!round") || message.content.startsWith("!read")) {
+            let thisServerSetting = serverSettings.find(ss => ss.serverId == message.guild!.id);
             let splits = message.content.split(" ");
             if (splits.length > 1) {
                 let desiredPacketName = splits.slice(-1)[0];
                 if (desiredPacketName) {
                     if (desiredPacketName.includes("reset") || desiredPacketName.includes("clear")) {
-                        setPacketName("");
+                        setPacketName(message.guild!.id, "");
                         message.reply("Packet cleared.");
                     } else {
-                        setPacketName(desiredPacketName);
-                        message.reply(`Now reading packet ${packetName}.`);
+                        setPacketName(message.guild!.id, desiredPacketName);
+                        message.reply(`Now reading packet ${thisServerSetting?.packetName}.`);
                         const echoChannelId = getServerChannels(message.guild!.id).find(c => (c.channel_type === 3))?.channel_id;
                         if (echoChannelId) {
                             const echoChannel = (client.channels.cache.get(echoChannelId) as TextChannel);
-                            echoChannel.send(`# Packet ${packetName}`);
+                            echoChannel.send(`# Packet ${thisServerSetting?.packetName}`);
                         }
                     }
                 } else {
                     if (message.content.startsWith("!packet") || message.content.startsWith("!round")) {
-                        if (packetName) {
-                            message.reply(`The current packet is ${packetName}.`);
+                        if (thisServerSetting?.packetName) {
+                            message.reply(`The current packet is ${thisServerSetting?.packetName}.`);
                         } else {
                             message.reply("Packet not configured yet.");
                         }
@@ -66,8 +67,8 @@ client.on('messageCreate', async (message) => {
                 }
             } else {
                 if (message.content.startsWith("!packet") || message.content.startsWith("!round")) {
-                    if (packetName) {
-                        message.reply(`The current packet is ${packetName}.`);
+                    if (thisServerSetting?.packetName) {
+                        message.reply(`The current packet is ${thisServerSetting?.packetName}.`);
                     } else {
                         message.reply("Packet not configured yet.");
                     }

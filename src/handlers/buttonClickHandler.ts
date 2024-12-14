@@ -1,6 +1,6 @@
 import { Interaction } from "discord.js";
 import { BONUS_DIFFICULTY_REGEX, BONUS_REGEX, TOSSUP_REGEX } from "src/constants";
-import { buildButtonMessage, QuestionType, UserBonusProgress, UserProgress, UserTossupProgress, getEmbeddedMessage, getTossupParts, removeBonusValue, removeSpoilers, getCategoryName, getCategoryRole, isNumeric, packetName } from "src/utils";
+import { buildButtonMessage, QuestionType, UserBonusProgress, UserProgress, UserTossupProgress, getEmbeddedMessage, getTossupParts, removeBonusValue, removeSpoilers, getCategoryName, getCategoryRole, isNumeric, serverSettings } from "src/utils";
 
 export default async function handleButtonClick(interaction: Interaction, userProgress: Map<string, UserProgress>, setUserProgress: (key: any, value: any) => void) {
     if (interaction.isButton() && interaction.customId === 'play_question') {
@@ -73,6 +73,7 @@ export default async function handleButtonClick(interaction: Interaction, userPr
     } else if (interaction.isButton() && interaction.customId === 'bulk_thread') {
         const message = await interaction.message.channel.messages.fetch(interaction.message.id);
 
+        let thisServerSetting = serverSettings.find(ss => ss.serverId == message.guild!.id);
         if (message?.reference?.messageId) {
             const questionMessage = await interaction.message.channel.messages.fetch(message.reference.messageId);
             const bonusMatch = questionMessage.content.match(BONUS_REGEX);
@@ -85,7 +86,7 @@ export default async function handleButtonClick(interaction: Interaction, userPr
 
             if (bonusMatch) {
                 let [_, leadin, part1, answer1, part2, answer2, part3, answer3, metadata, difficultyPart1, difficultyPart2, difficultyPart3] = bonusMatch;
-                questionNumber = leadin.charAt(0);
+                questionNumber = leadin.slice(0, 4).replace(".", "").trim();
 
                 if (metadata) {
                     categoryName = getCategoryName(metadata);
@@ -93,11 +94,11 @@ export default async function handleButtonClick(interaction: Interaction, userPr
                 }
 
                 threadName = metadata ?
-                    `${packetName ? packetName + "." : ""}B${isNumeric(questionNumber) ? questionNumber: ""} | ${categoryName}` :
+                    `${thisServerSetting?.packetName ? thisServerSetting?.packetName + "." : ""}B${isNumeric(questionNumber) ? questionNumber: ""} | ${categoryName}` :
                     `B | ${leadin.substring(0, 30)}...`;
             } else if (tossupMatch) {
                 let [_, question, answer, metadata] = tossupMatch;
-                questionNumber = question.charAt(0);
+                questionNumber = question.slice(0, 4).replace(".", "").trim();
 
                 if (metadata) {
                     categoryName = getCategoryName(metadata);
@@ -105,7 +106,7 @@ export default async function handleButtonClick(interaction: Interaction, userPr
                 }
 
                 threadName = metadata ?
-                    `${packetName ? packetName + "." : ""}T${isNumeric(questionNumber) ? questionNumber: ""} | ${categoryName}` :
+                    `${thisServerSetting?.packetName ? thisServerSetting?.packetName + "." : ""}T${isNumeric(questionNumber) ? questionNumber: ""} | ${categoryName}` :
                     `T | ${question.substring(0, 30)}...`;
             }
 
