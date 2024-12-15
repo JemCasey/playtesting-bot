@@ -76,16 +76,16 @@ ANSWER: ||__**kill**__ing a __**deer**__ [accept any synonyms in place of “kil
 
 ### Asynchronous Playtesting
 
-To play a question that has been detected by the bot:
+To play [an asynchronous question that has been detected by the bot](./examples/async-question.png):
 
 * Click the `Play Tossup` or `Play Bonus` button in the bot's reply to the question.
 * Look for a DM from the bot. Use the keyboard commands described by the bot to interact with the question.
-* When you're done, your result will be shared in a thread in the designated playtesting results channel.
+* When you're done, your result will be shared in [a thread in the designated playtesting results channel](./examples/async-results.png).
 
 ### Bulk Playtesting
 
 * To begin reading a packet (e.g. `Packet A`), send the message `!read A` or `!packet A` or `!round A`.
-* For each question in the packet to be playtested:
+* [For each question in the packet to be playtested](./examples/bulk.png):
   * Paste the spoiler-tagged question in any of the bulk playtesting channels. Just like in asynchronous playtesting, adding `!t` to the question content will auto-create a discussion thread.
   * The bot will auto-react to the question message with a set of reacts depending on if it's a tossup or bonus:
     * Tossups
@@ -100,7 +100,7 @@ To play a question that has been detected by the bot:
       * Hard part - `:bonus_H:`
       * 0 points - `:bonus_0:`
       * Note that the bot will auto-order the bonus reacts based on the order of the bonus difficulties.
-  * If configured, the bot will send a link to the question in the echo channel.
+  * If configured, [the bot will send a link to the question in the echo channel](./examples/echo.png).
 * To reset the packet name, use `!packet reset` or `!packet clear`.
 
 ## Instructions for Developers
