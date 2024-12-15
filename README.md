@@ -57,6 +57,7 @@ To create a question, add spoiler marks as per the examples below for [tossups](
 ||This thinker claimed to see “another universe” upon reading an essay prompt asking whether culture leads to “the purification of morals.”|| ||This thinker’s story of hunters who defect to pursue a hare inspired Brian Skyrms’s “stag hunt” game.|| ||This thinker accused David Hume of plotting against him while Hume sheltered him during the fallout over one of his books,|| ||which notes that those who “refuse” to join the “whole body” will be “forced to be free.”|| ||This thinker defined amour-propre and amour de soi|| ||in a book that traces civil society to the first man who “enclosed a piece of ground” and declared, “This is mine.”|| ||This thinker theorized the “general will”|| ||in a book that claims man is “everywhere… in chains.”|| ||For 10 points, name this author of Discourse on Inequality and The Social Contract.||
 ANSWER: ||Jean-Jacques Rousseau||
 <JB, ||Philosophy||>
+!t
 ```
 
 #### Bonus Formatting
@@ -70,6 +71,7 @@ ANSWER: ||The Last of the Mohicans||
 [10||m||] ||In The Pioneers, Natty is arrested for performing this action after Templeton adopts anti-waste laws. Natty’s rifle is nicknamed for this action, which titles the chronologically first Leatherstocking Tale.||
 ANSWER: ||killing a deer [accept any synonyms in place of “killing,” such as hunting or shooting; accept Killdeer or The Deerslayer; prompt on partial answers]||
 <JB, ||American Literature||>
+!t
 ```
 
 ### Asynchronous Playtesting
