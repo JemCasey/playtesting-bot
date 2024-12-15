@@ -53,23 +53,23 @@ To create a question, add spoiler marks as per the examples below for [tossups](
 
 #### Tossup Formatting
 
-```markdown
-||This thinker claimed to see “another universe” upon reading an essay prompt asking whether culture leads to “the purification of morals.”|| ||This thinker’s story of hunters who defect to pursue a hare inspired Brian Skyrms’s “stag hunt” game.|| ||This thinker accused David Hume of plotting against him while Hume sheltered him during the fallout over one of his books,|| ||which notes that those who “refuse” to join the “whole body” will be “forced to be free.”|| ||This thinker defined amour-propre and amour de soi|| ||in a book that traces civil society to the first man who “enclosed a piece of ground” and declared, “This is mine.”|| ||This thinker theorized the “general will”|| ||in a book that claims man is “everywhere… in chains.”|| ||For 10 points, name this author of Discourse on Inequality and The Social Contract.||
-ANSWER: ||Jean-Jacques Rousseau||
+```text
+**||This thinker claimed to see “another universe” upon reading an essay prompt asking whether culture leads to “the purification of morals.”|| ||This thinker’s story of hunters who defect to pursue a hare inspired Brian Skyrms’s “stag hunt” game.|| ||This thinker accused David Hume of plotting against him while Hume sheltered him during the fallout over one of his books,|| ||which notes that those who “refuse” to join the “whole body” will be “forced to be free.”|| ||This thinker defined (\*)||** ||_amour-propre_ and _amour de soi_|| ||in a book that traces civil society to the first man who “enclosed a piece of ground” and declared, “This is mine.”|| ||This thinker theorized the “general will”|| ||in a book that claims man is “everywhere… in chains.”|| ||For 10 points, name this author of _Discourse on Inequality_ and _The Social Contract_.||
+ANSWER: ||Jean-Jacques __**Rousseau**__||
 <JB, ||Philosophy||>
 !t
 ```
 
 #### Bonus Formatting
 
-```markdown
-This author’s daughter Susan protested declining biodiversity in essays like “Lament for the Birds” and her “nature diary” Rural Hours. For 10 points each:
+```text
+This author’s daughter Susan protested declining biodiversity in essays like “Lament for the Birds” and her “nature diary” _Rural Hours_. For 10 points each:
 [10||h||] Name this author of a novel whose protagonist decries the “wasty ways” of the townsfolk of Templeton, who massacre thousands of passenger pigeons and leave piles of fish rotting on the shores of Lake Otsego.
-ANSWER: ||James Fenimore Cooper||
-[10||e||] ||Cooper presented his early preservationist views via the character of Natty Bumppo in works like The Pioneers and this novel. Chingachgook, who is the title character of this novel, escorts Colonel Munro’s daughters.||
-ANSWER: ||The Last of the Mohicans||
-[10||m||] ||In The Pioneers, Natty is arrested for performing this action after Templeton adopts anti-waste laws. Natty’s rifle is nicknamed for this action, which titles the chronologically first Leatherstocking Tale.||
-ANSWER: ||killing a deer [accept any synonyms in place of “killing,” such as hunting or shooting; accept Killdeer or The Deerslayer; prompt on partial answers]||
+ANSWER: ||James Fenimore __**Cooper**__||
+[10||e||] ||Cooper presented his early preservationist views via the character of Natty Bumppo in works like _The Pioneers_ and this novel. Chingachgook, who is the title character of this novel, escorts Colonel Munro’s daughters.||
+ANSWER: ||__**_The Last of the Mohicans_**__||
+[10||m||] ||In _The Pioneers_, Natty is arrested for performing this action after Templeton adopts anti-waste laws. Natty’s rifle is nicknamed for this action, which titles the chronologically first Leatherstocking Tale.||
+ANSWER: ||__**kill**__ing a __**deer**__ [accept any synonyms in place of “killing,” such as __**hunt**__ing or __**shoot**__ing; accept __**Killdeer**__ or The ___**Deerslay**__er_; prompt on partial answers]||
 <JB, ||American Literature||>
 !t
 ```
