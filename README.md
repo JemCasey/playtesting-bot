@@ -13,7 +13,11 @@ The bot was created by Jordan Brownstein in 2023 for the production of 2024 Chic
 
 ## Instructions for Users
 
-### Configuration
+These instructions have been split based on whether you are a manager for the bot or whether you are just an editor in the production server. Bot managers must configure the bot before it may be used by editors and playtesters.
+
+### Instructions for Bot Managers
+
+#### Configuration
 
 Use [this invite link](https://discord.com/api/oauth2/authorize?client_id=1128432579436101724&permissions=67584&scope=bot) to add the default instance of the bot (**Botticelli**) to your server.
 
@@ -21,7 +25,7 @@ Use [this invite link](https://discord.com/api/oauth2/authorize?client_id=112843
 > Botticelli is **in alpha and 24/7 availability is not guaranteed**. If this is a concern for your project, you can follow the steps under [Instruction for Developers](#instructions-for-developers) to set up your own instance.
 
 > [!TIP]
-> It is strongly recommended that you use the [ACF Production Server Template](https://discord.new/ps5S8Bsxwfra) for your production/playtesting server. The bot has been extensively tested in that framework, and using it will save you the significant amount of time necessary to set up all the necessary roles, permissions, and channels.
+> It is strongly recommended that you use the [ACF Production Server Template](https://discord.new/ps5S8Bsxwfra)[^1] for your production/playtesting server. The bot has been extensively tested in that framework, and using it will save you the significant amount of time necessary to set up all the necessary roles, permissions, and channels.
 
 Once added to the server, follow the instructions below to configure the bot:
 
@@ -38,9 +42,11 @@ Once added to the server, follow the instructions below to configure the bot:
 > [!IMPORTANT]
 > If you would like sensitive data, such as question answers and playtester notes, to be encrypted in the bot's database, please add a role to your server called `secret` before playtesting any questions. **Once created, this role should not be deleted.** Some planned commands that access answer data will not be able to decrypt it if the role is removed or recreated.
 
-### Formatting
+### Instructions for Editors
 
-To create a question, add spoiler marks as per the examples below for [tossups](#tossup-formatting) and [bonuses](#bonus-formatting) and paste the content in the desired channel.
+#### Formatting
+
+To set up a question for playtesting through the bot, add spoiler marks as per the examples below for [tossups](#tossup-formatting) and [bonuses](#bonus-formatting) and paste the content in the desired channel.
 
 > [!TIP]
 > Add `!t` somewhere in the question message if you want the bot to auto-create a discussion thread (this is recommended).
@@ -51,28 +57,28 @@ To create a question, add spoiler marks as per the examples below for [tossups](
 > [!NOTE]
 > Messages should only contain one question; if you're playtesting a batch of questions, please send them one by one.
 
-#### Tossup Formatting
+##### Tossup Formatting
 
-```text
-**||This thinker claimed to see “another universe” upon reading an essay prompt asking whether culture leads to “the purification of morals.”|| ||This thinker’s story of hunters who defect to pursue a hare inspired Brian Skyrms’s “stag hunt” game.|| ||This thinker accused David Hume of plotting against him while Hume sheltered him during the fallout over one of his books,|| ||which notes that those who “refuse” to join the “whole body” will be “forced to be free.”|| ||This thinker defined (\*)||** ||_amour-propre_ and _amour de soi_|| ||in a book that traces civil society to the first man who “enclosed a piece of ground” and declared, “This is mine.”|| ||This thinker theorized the “general will”|| ||in a book that claims man is “everywhere… in chains.”|| ||For 10 points, name this author of _Discourse on Inequality_ and _The Social Contract_.||
-ANSWER: ||Jean-Jacques __**Rousseau**__||
-<JB, ||Philosophy||>
-!t
-```
+<code>\*\*||This thinker claimed to see “another universe” upon reading an essay prompt asking whether culture leads to “the purification of morals.”|| ||This thinker’s story of hunters who defect to pursue a hare inspired Brian Skyrms’s “stag hunt” game.|| ||This thinker accused David Hume of plotting against him while Hume sheltered him during the fallout over one of his books,|| ||which notes that those who “refuse” to join the “whole body” will be “forced to be free.”|| ||This thinker defined (\*)||\*\* ||\_amour-propre\_ and \_amour de soi\_|| ||in a book that traces civil society to the first man who “enclosed a piece of ground” and declared, “This is mine.”|| ||This thinker theorized the “general will”|| ||in a book that claims man is “everywhere… in chains.”|| ||For 10 points, name this author of \_Discourse on Inequality\_ and \_The Social Contract\_.||
+ANSWER: ||Jean-Jacques \_\_\*\*Rousseau\*\*\_\_||
+\<JB\, ||Philosophy||\>
+!t</code>
 
-#### Bonus Formatting
+##### Bonus Formatting
 
-```text
-This author’s daughter Susan protested declining biodiversity in essays like “Lament for the Birds” and her “nature diary” _Rural Hours_. For 10 points each:
-[10||h||] Name this author of a novel whose protagonist decries the “wasty ways” of the townsfolk of Templeton, who massacre thousands of passenger pigeons and leave piles of fish rotting on the shores of Lake Otsego.
-ANSWER: ||James Fenimore __**Cooper**__||
-[10||e||] ||Cooper presented his early preservationist views via the character of Natty Bumppo in works like _The Pioneers_ and this novel. Chingachgook, who is the title character of this novel, escorts Colonel Munro’s daughters.||
-ANSWER: ||__**_The Last of the Mohicans_**__||
-[10||m||] ||In _The Pioneers_, Natty is arrested for performing this action after Templeton adopts anti-waste laws. Natty’s rifle is nicknamed for this action, which titles the chronologically first Leatherstocking Tale.||
-ANSWER: ||__**kill**__ing a __**deer**__ [accept any synonyms in place of “killing,” such as __**hunt**__ing or __**shoot**__ing; accept __**Killdeer**__ or The ___**Deerslay**__er_; prompt on partial answers]||
-<JB, ||American Literature||>
-!t
-```
+<code>This author’s daughter Susan protested declining biodiversity in essays like “Lament for the Birds” and her “nature diary” \_Rural Hours\_. For 10 points each:
+[10] Name this author of a novel whose protagonist decries the “wasty ways” of the townsfolk of Templeton, who massacre thousands of passenger pigeons and leave piles of fish rotting on the shores of Lake Otsego.
+ANSWER: ||James Fenimore \_\_\*\*Cooper\*\*\_\_||
+[10] ||Cooper presented his early preservationist views via the character of Natty Bumppo in works like \_The Pioneers\_ and this novel. Chingachgook, who is the title character of this novel, escorts Colonel Munro’s daughters.||
+ANSWER: ||\_The\_\_\*\*Last of the Mohicans\*\*\_\_\_||
+[10] ||In \_The Pioneers\_, Natty is arrested for performing this action after Templeton adopts anti-waste laws. Natty’s rifle is nicknamed for this action, which titles the chronologically first Leatherstocking Tale.||
+ANSWER: ||\_\_\*\*kill\*\*\_\_ing a \_\_\*\*deer\*\*\_\_ [accept any synonyms in place of “killing,” such as \_\_\*\*hunt\*\*\_\_ing or \_\_\*\*shoot\*\*\_\_ing; accept \_\_\*\*Killdeer\*\*\_\_ or \_The \_\_\*\*Deerslay\*\*\_\_er\_; prompt on partial answers]||
+\<JB\, ||American Literature||\>
+||h/e/m||
+!t</code>
+
+> [!TIP]
+ > The formatting style seen above is the default output style used by the [Paster Dingus](https://minkowski.space/quizbowl/paster/). An alternative style is to add the difficulty marks inside each `[10]` tag in the form `10||h||`.
 
 ### Asynchronous Playtesting
 
@@ -169,3 +175,5 @@ As [mentioned above](#configuration), there is already an instance of the bot th
 ## License
 
 [ISC](https://choosealicense.com/licenses/isc/)
+
+[^1]: The ACF Production Server Template was created in 2024 by Ani Perumalla for the production of 2025 ACF Regionals.
