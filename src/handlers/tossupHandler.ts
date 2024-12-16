@@ -93,7 +93,8 @@ export default async function handleTossupPlaytest(message: Message<boolean>, cl
 
         saveBuzz(userProgress.serverId, userProgress.questionId, userProgress.authorId, message.author.id, buzzIndex, charactersRevealed, value, sanitizedNote, key);
 
-        const threadName = `T | ${userProgress.authorName} | "${getToFirstIndicator(userProgress.questionParts[0])}"`;
+        const fallbackName = getToFirstIndicator(userProgress.questionParts[0]?.replace("\\", "").replaceAll(/^\d+\.\s*/g, ""));
+        const threadName = `T | ${userProgress.authorName} | ${fallbackName}`;
         const resultsChannel = client.channels.cache.get(resultChannel!.result_channel_id) as TextChannel;
         const playtestingChannel = client.channels.cache.get(userProgress.channelId) as TextChannel;
         const thread = await getThreadAndUpdateSummary(userProgress, threadName.slice(0, 100), resultsChannel, playtestingChannel);

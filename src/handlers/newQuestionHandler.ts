@@ -1,24 +1,25 @@
 import { Message, Application, TextChannel } from "discord.js";
 import { BONUS_DIFFICULTY_REGEX, BONUS_REGEX, TOSSUP_REGEX } from "src/constants";
 import KeySingleton from "src/services/keySingleton";
-import { buildButtonMessage, getCategoryCount, getServerChannels, getTossupParts, removeSpoilers, saveBonus, BonusPart, saveTossup, shortenAnswerline, getCategoryName, getCategoryRole, isNumeric, serverSettings } from "src/utils";
+import { buildButtonMessage, getCategoryCount, getServerChannels, getTossupParts, getToFirstIndicator, removeSpoilers, saveBonus, BonusPart, saveTossup, shortenAnswerline, getCategoryName, getCategoryRole, isNumeric, serverSettings, ServerChannel } from "src/utils";
 import { client } from "src/bot";
 import { reactEmojiList } from "src/utils/emojis";
 
-async function handleThread(channel_type: number, message: Message, isBonus: boolean, question: string, metadata: string, questionNumber: string = "") {
+async function handleThread(msgChannel: ServerChannel, message: Message, isBonus: boolean, question: string, metadata: string, questionNumber: string = "") {
     let thisServerSetting = serverSettings.find(ss => ss.serverId == message.guild!.id);
     let threadName = "Discussion Thread";
+    let fallbackName = getToFirstIndicator(question.replace("\\", "").replaceAll(/^\d+\.\s*/g, ""));
     let categoryName = getCategoryName(metadata);
     let categoryRoleName = getCategoryRole(categoryName);
 
-    if (channel_type === 2) {
+    if (msgChannel.channel_type === 2) {
         threadName = metadata ?
-            `${thisServerSetting?.packetName ? thisServerSetting?.packetName + "." : ""}${isBonus ? "B" : "T"}${questionNumber} | ${categoryName}` :
-            `"${question.substring(0, 30)}..."`;
-    } else if (channel_type === 1) {
+            `${thisServerSetting?.packetName ? thisServerSetting?.packetName + "." : ""}${isBonus ? "B" : "T"}${questionNumber} | ${categoryName} | ${fallbackName}` :
+            `"${fallbackName}"`;
+    } else if (msgChannel.channel_type === 1) {
         threadName = metadata ?
             `${metadata} | ${isBonus ? "B" : "T"}${getCategoryCount(message.author.id, message.guild?.id, categoryName, isBonus)}`
-            : `"${question.substring(0, 30)}..."`;
+            : `"${fallbackName}"`;
     }
 
     const thread = await message.startThread({
@@ -27,25 +28,31 @@ async function handleThread(channel_type: number, message: Message, isBonus: boo
     });
 
     if (thread) {
-        if (channel_type !== 2) {
+        if (msgChannel.channel_type !== 2) {
             await thread.members.add(message.author);
         }
 
-        let headEditorRole = message.guild?.roles.cache.find(r => r.name === "Head Editor");
-        if (headEditorRole) {
-            headEditorRole.members.map(m => m.user).forEach(async (u) => {
-                // console.log(`Role: ${headEditorRole.name}; User tag: ${u.tag}; User ID: ${u.id}`);
-                await thread.members.add(u);
+        await message.guild?.members.fetch().then(members => {
+            let headEditorUsers = members.filter(member => member.roles.cache.find(role => role.name === "Head Editor"));
+            headEditorUsers.forEach(async u => {
+                console.log(`Role: Head Editor; User tag: ${u.user.tag}; User ID: ${u.user.id}`);
+                if (u.permissionsIn(message.channel.id).has("ViewChannel")) {
+                    await thread.members.add(u.user);
+                }
             });
-        }
+            console.log(`Users with Head Editor role: ${headEditorUsers.map(u => u.user.username).join(", ")}`);
+        });
 
-        let categoryRole = message.guild?.roles.cache.find(r => r.name === categoryRoleName);
-        if (categoryRole) {
-            categoryRole.members.map(m => m.user).forEach(async (u) => {
-                // console.log(`Role: ${categoryRole.name}; User tag: ${u.tag}; User ID: ${u.id}`);
-                await thread.members.add(u);
+        await message.guild?.members.fetch().then(members => {
+            let categoryUsers = members.filter(member => member.roles.cache.find(role => role.name === categoryRoleName));
+            categoryUsers.forEach(async u => {
+                console.log(`Role: ${categoryRoleName}; User tag: ${u.user.tag}; User ID: ${u.user.id}`);
+                if (u.permissionsIn(message.channel.id).has("ViewChannel")) {
+                    await thread.members.add(u.user);
+                }
             });
-        }
+            console.log(`Users with ${categoryRoleName} role: ${categoryUsers.map(u => u.user.username).join(", ")}`);
+        });
     }
 }
 
@@ -98,14 +105,14 @@ export default async function handleNewQuestion(message: Message<boolean>) {
         ];
         let questionNumber = "";
         let questionEcho = "";
-        let answersEcho: string[] = [];
+        // let answersEcho: string[] = [];
 
         if (bonusMatch) {
             const [_, leadin, part1, answer1, part2, answer2, part3, answer3, metadata, difficultyPart1, difficultyPart2, difficultyPart3] = bonusMatch;
             const difficulty1Match = part1.match(BONUS_DIFFICULTY_REGEX) || [];
             const difficulty2Match = part2.match(BONUS_DIFFICULTY_REGEX) || [];
             const difficulty3Match = part3.match(BONUS_DIFFICULTY_REGEX) || [];
-            threadQuestionText = part1;
+            threadQuestionText = leadin;
             threadMetadata = removeSpoilers(metadata);
             questionNumber = leadin.slice(0, 4).replace(".", "").trim();
 
@@ -119,9 +126,9 @@ export default async function handleNewQuestion(message: Message<boolean>) {
             } else if (msgChannel.channel_type === 1) {
                 saveBonus(message.id, message.guildId!, message.author.id, getCategoryName(threadMetadata), difficulties, key);
             }
-            answersEcho.push(shortenAnswerline(answer1));
-            answersEcho.push(shortenAnswerline(answer2));
-            answersEcho.push(shortenAnswerline(answer3));
+            // answersEcho.push(shortenAnswerline(answer1));
+            // answersEcho.push(shortenAnswerline(answer2));
+            // answersEcho.push(shortenAnswerline(answer3));
         } else if (tossupMatch) {
             const [_, question, answer, metadata] = tossupMatch;
             const tossupParts = getTossupParts(question);
@@ -141,7 +148,7 @@ export default async function handleNewQuestion(message: Message<boolean>) {
             } else if (msgChannel.channel_type === 1) {
                 saveTossup(message.id, message.guildId!, message.author.id, questionLength, getCategoryName(threadMetadata), shortenAnswerline(answer), key);
             }
-            answersEcho.push(shortenAnswerline(answer));
+            // answersEcho.push(shortenAnswerline(answer));
         }
 
         if (msgChannel.channel_type !== 3) {
@@ -157,7 +164,8 @@ export default async function handleNewQuestion(message: Message<boolean>) {
                         (isNumeric(questionNumber) ? (" " + questionNumber) : "") + " - " +
                         getCategoryName(threadMetadata) +
                         "](" + message.url + ") - " +
-                        "||" + answersEcho.join(" / ") + "||";
+                        "||" + getToFirstIndicator(threadQuestionText.replace("\\", "").replaceAll(/^\d+\.\s*/g, "")) + "||";
+                        // questionEcho += answersEcho.join(" / ") + "||";
                     }
                     echoQuestion(questionEcho, message.url, echoChannelId, thisServerSetting?.echoWhole || false).then(echoURL => {
                         if (message.content.includes('!t')) {
@@ -171,7 +179,7 @@ export default async function handleNewQuestion(message: Message<boolean>) {
                 await message.reply(buildButtonMessage("play_question", "Play " + (!!bonusMatch ? "Bonus" : "Tossup")));
             }
             if (message.content.includes('!t')) {
-                await handleThread(msgChannel.channel_type, message, !!bonusMatch, threadQuestionText, threadMetadata, isNumeric(questionNumber) ? questionNumber: "");
+                await handleThread(msgChannel, message, !!bonusMatch, threadQuestionText, threadMetadata, isNumeric(questionNumber) ? questionNumber: "");
             }
         }
     }

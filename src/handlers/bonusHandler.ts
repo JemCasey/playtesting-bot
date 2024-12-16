@@ -84,7 +84,8 @@ export default async function handleBonusPlaytest(message: Message<boolean>, cli
             resultMessage += ` <@${message.author.id}> scored ${totalPoints} points: `;
             resultMessage += partMessages.join(', ');
 
-            const threadName = `B | ${userProgress.authorName} | "${getToFirstIndicator(userProgress.leadin)}"`;
+            const fallbackName = getToFirstIndicator(userProgress.leadin.replace("\\", "").replaceAll(/^\d+\.\s*/g, ""));
+            const threadName = `B | ${userProgress.authorName} | "${fallbackName}"`;
             const resultsChannel = client.channels.cache.get(resultChannel!.result_channel_id) as TextChannel;
             const playtestingChannel = client.channels.cache.get(userProgress.channelId) as TextChannel;
             const thread = await getThreadAndUpdateSummary(userProgress, threadName.slice(0, 100), resultsChannel, playtestingChannel);

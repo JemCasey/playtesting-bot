@@ -46,7 +46,7 @@ const getBonusCategoryCountQuery = db.prepare('SELECT COUNT(*) AS category_count
 const literature_names = ["literature", "lit", "drama", "poetry", "fiction"];
 const history_names = ["history", "historiography", "archeology"];
 const rmpss_names = ["religion", "myth", "phil", "social", "econ", "psych", "ling", "socio", "anthro", "law"]
-const arts_names = ["arts", "paint", "sculpt", "music", "classical", "auditory", "visual", "architecture", "photo", "film", "jazz", "opera", "dance"];
+const arts_names = ["arts", "fine", "paint", "sculpt", "music", "classical", "auditory", "visual", "architecture", "photo", "film", "jazz", "opera", "dance"];
 const science_names = ["science", "bio", "chem", "physics", "math", "astro", "computer", "earth", "engineering", "ecology"];
 const other_names = ["other", "academic", "geography", "current", "events", "pop", "culture", "trash"];
 
@@ -407,6 +407,7 @@ export const buildButtonMessage = (buttonID: string = "play_question", primaryBu
 }
 
 export const getToFirstIndicator = (clue: string) => {
+    clue = removeSpoilers(clue);
     const words = clue.split(' ');
     const thisIndex = words.findIndex(w => w.toLocaleLowerCase() === 'this' || w.toLocaleLowerCase() === 'these');
     const defaultSize = 30;

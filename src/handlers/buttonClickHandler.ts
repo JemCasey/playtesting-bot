@@ -1,6 +1,6 @@
 import { Interaction } from "discord.js";
 import { BONUS_DIFFICULTY_REGEX, BONUS_REGEX, TOSSUP_REGEX } from "src/constants";
-import { buildButtonMessage, QuestionType, UserBonusProgress, UserProgress, UserTossupProgress, getEmbeddedMessage, getTossupParts, removeBonusValue, removeSpoilers, getCategoryName, getCategoryRole, isNumeric, serverSettings } from "src/utils";
+import { buildButtonMessage, QuestionType, UserBonusProgress, UserProgress, UserTossupProgress, getEmbeddedMessage, getTossupParts, getToFirstIndicator, removeBonusValue, removeSpoilers, getCategoryName, getCategoryRole, isNumeric, serverSettings } from "src/utils";
 
 export default async function handleButtonClick(interaction: Interaction, userProgress: Map<string, UserProgress>, setUserProgress: (key: any, value: any) => void) {
     if (interaction.isButton() && interaction.customId === 'play_question') {
@@ -80,6 +80,7 @@ export default async function handleButtonClick(interaction: Interaction, userPr
             const tossupMatch = questionMessage.content.match(TOSSUP_REGEX);
 
             let threadName = "Discussion Thread";
+            let fallbackName = "";
             let questionNumber = "";
             let categoryName = "";
             let categoryRoleName = "";
@@ -93,9 +94,10 @@ export default async function handleButtonClick(interaction: Interaction, userPr
                     categoryRoleName = getCategoryRole(categoryName);
                 }
 
+                fallbackName = getToFirstIndicator(leadin.replace("\\", "").replaceAll(/^\d+\.\s*/g, ""));
                 threadName = metadata ?
-                    `${thisServerSetting?.packetName ? thisServerSetting?.packetName + "." : ""}B${isNumeric(questionNumber) ? questionNumber: ""} | ${categoryName}` :
-                    `B | ${leadin.substring(0, 30)}...`;
+                    `${thisServerSetting?.packetName ? thisServerSetting?.packetName + "." : ""}B${isNumeric(questionNumber) ? questionNumber: ""} | ${categoryName} | ${fallbackName}` :
+                    `B | ${getToFirstIndicator(fallbackName)}`;
             } else if (tossupMatch) {
                 let [_, question, answer, metadata] = tossupMatch;
                 questionNumber = question.slice(0, 4).replace(".", "").trim();
@@ -105,9 +107,10 @@ export default async function handleButtonClick(interaction: Interaction, userPr
                     categoryRoleName = getCategoryRole(categoryName);
                 }
 
+                fallbackName = getToFirstIndicator(question.replace("\\", "").replaceAll(/^\d+\.\s*/g, ""));
                 threadName = metadata ?
-                    `${thisServerSetting?.packetName ? thisServerSetting?.packetName + "." : ""}T${isNumeric(questionNumber) ? questionNumber: ""} | ${categoryName}` :
-                    `T | ${question.substring(0, 30)}...`;
+                    `${thisServerSetting?.packetName ? thisServerSetting?.packetName + "." : ""}T${isNumeric(questionNumber) ? questionNumber: ""} | ${categoryName} | ${fallbackName}` :
+                    `T | ${fallbackName}`;
             }
 
             const thread = await questionMessage.startThread({
@@ -118,21 +121,27 @@ export default async function handleButtonClick(interaction: Interaction, userPr
             if (thread) {
                 message.edit(buildButtonMessage("bulk_thread", "Discussion Thread", thread.url));
 
-                let headEditorRole = message.guild?.roles.cache.find(r => r.name === "Head Editor");
-                if (headEditorRole) {
-                    headEditorRole.members.map(m => m.user).forEach(async (u) => {
-                        // console.log(`Role: ${headEditorRole.name}; User tag: ${u.tag}; User ID: ${u.id}`);
-                        await thread.members.add(u);
+                await message.guild?.members.fetch().then(members => {
+                    let headEditorUsers = members.filter(member => member.roles.cache.find(role => role.name === "Head Editor"));
+                    headEditorUsers.forEach(async u => {
+                        console.log(`Role: Head Editor; User tag: ${u.user.tag}; User ID: ${u.user.id}`);
+                        if (u.permissionsIn(message.channel.id).has("ViewChannel")) {
+                            await thread.members.add(u.user);
+                        }
                     });
-                }
+                    console.log(`Users with Head Editor role: ${headEditorUsers.map(u => u.user.username).join(", ")}`);
+                });
 
-                let categoryRole = message.guild?.roles.cache.find(r => r.name === categoryRoleName);
-                if (categoryRole) {
-                    categoryRole.members.map(m => m.user).forEach(async (u) => {
-                        // console.log(`Role: ${categoryRole.name}; User tag: ${u.tag}; User ID: ${u.id}`);
-                        await thread.members.add(u);
+                await message.guild?.members.fetch().then(members => {
+                    let categoryUsers = members.filter(member => member.roles.cache.find(role => role.name === categoryRoleName));
+                    categoryUsers.forEach(async u => {
+                        console.log(`Role: ${categoryRoleName}; User tag: ${u.user.tag}; User ID: ${u.user.id}`);
+                        if (u.permissionsIn(message.channel.id).has("ViewChannel")) {
+                            await thread.members.add(u.user);
+                        }
                     });
-                }
+                    console.log(`Users with ${categoryRoleName} role: ${categoryUsers.map(u => u.user.username).join(", ")}`);
+                });
             }
         }
     }
