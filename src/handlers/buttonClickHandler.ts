@@ -115,22 +115,25 @@ export default async function handleButtonClick(interaction: Interaction, userPr
                 autoArchiveDuration: 60
             });
 
-            message.edit(buildButtonMessage("bulk_thread", "Discussion Thread", thread.url));
+            if (thread) {
+                message.edit(buildButtonMessage("bulk_thread", "Discussion Thread", thread.url));
 
-            let roleMessage: string[] = [];
-            let headEditorRole = message.guild?.roles.cache.find(r => r.name === "Head Editor");
-            if (headEditorRole) {
-                roleMessage.push("<@&" + headEditorRole?.id + ">");
-            }
-            let categoryRole = message.guild?.roles.cache.find(r => r.name === categoryRoleName);
-            if (categoryRole) {
-                roleMessage.push("<@&" + categoryRole?.id + ">");
-            }
+                let headEditorRole = message.guild?.roles.cache.find(r => r.name === "Head Editor");
+                if (headEditorRole) {
+                    headEditorRole.members.map(m => m.user).forEach(async (u) => {
+                        // console.log(`Role: ${headEditorRole.name}; User tag: ${u.tag}; User ID: ${u.id}`);
+                        await thread.members.add(u);
+                    });
+                }
 
-            if (roleMessage.length > 0) {
-                thread.send(roleMessage.join(" "));
+                let categoryRole = message.guild?.roles.cache.find(r => r.name === categoryRoleName);
+                if (categoryRole) {
+                    categoryRole.members.map(m => m.user).forEach(async (u) => {
+                        // console.log(`Role: ${categoryRole.name}; User tag: ${u.tag}; User ID: ${u.id}`);
+                        await thread.members.add(u);
+                    });
+                }
             }
         }
     }
-
 }

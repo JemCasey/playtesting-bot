@@ -26,22 +26,26 @@ async function handleThread(channel_type: number, message: Message, isBonus: boo
         autoArchiveDuration: 60
     });
 
-    if (channel_type !== 2) {
-        thread.members.add(message.author);
-    }
+    if (thread) {
+        if (channel_type !== 2) {
+            await thread.members.add(message.author);
+        }
 
-    let roleMessage: string[] = [];
-    let headEditorRole = message.guild?.roles.cache.find(r => r.name === "Head Editor");
-    if (headEditorRole) {
-        roleMessage.push("<@&" + headEditorRole?.id + ">");
-    }
-    let categoryRole = message.guild?.roles.cache.find(r => r.name === categoryRoleName);
-    if (categoryRole) {
-        roleMessage.push("<@&" + categoryRole?.id + ">");
-    }
+        let headEditorRole = message.guild?.roles.cache.find(r => r.name === "Head Editor");
+        if (headEditorRole) {
+            headEditorRole.members.map(m => m.user).forEach(async (u) => {
+                // console.log(`Role: ${headEditorRole.name}; User tag: ${u.tag}; User ID: ${u.id}`);
+                await thread.members.add(u);
+            });
+        }
 
-    if (roleMessage.length > 0) {
-        thread.send(roleMessage.join(" "));
+        let categoryRole = message.guild?.roles.cache.find(r => r.name === categoryRoleName);
+        if (categoryRole) {
+            categoryRole.members.map(m => m.user).forEach(async (u) => {
+                // console.log(`Role: ${categoryRole.name}; User tag: ${u.tag}; User ID: ${u.id}`);
+                await thread.members.add(u);
+            });
+        }
     }
 }
 

@@ -130,6 +130,7 @@ As [mentioned above](#configuration), there is already an instance of the bot th
   DISCORD_APPLICATION_ID=[Your Application ID]
   ```
 
+* Go to the `Bot` panel and check the boxes for `Presence Intent`, `Server Members Intent`, and `Message Content Intent`. These are required for the bot to receive information about messages and members of each server.
 * If you want to use the bot for bulk playtesting, you must go to the `Emojis` panel and upload all of the emojis in the [`react_emojis` zip file](./react_emojis.zip) to your bot.
 
 ### Running Your Bot
