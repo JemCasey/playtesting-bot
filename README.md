@@ -52,7 +52,7 @@ To set up a question for playtesting through the bot, add spoiler marks as per t
 > Add `!t` somewhere in the question message if you want the bot to auto-create a discussion thread (this is recommended).
 
 > [!TIP]
-> It is strongly recommended that users of Google Docs use the [Paster Dingus](https://minkowski.space/quizbowl/paster/). This tool converts the content of a Google Docs question to the spoiler-tagged Discord Markdown version expected by the bot. Paste the Google Docs version in the tool's left panel, and the formatted version will appear on the right panel. Tick the checkbox to add spoiler marks and the auto-thread command.
+> It is strongly recommended that users of Google Docs use the [Paster Dingus](https://minkowski.space/quizbowl/paster/). This tool converts the content of a Google Docs question to the spoiler-tagged Discord Markdown version expected by the bot. Copy the question from Google Docs and paste into the tool's left panel; the formatted version will appear on the right panel. Tick the checkbox to add spoiler marks and the auto-thread command.
 
 > [!NOTE]
 > Messages should only contain one question; if you're playtesting a batch of questions, please send them one by one.
