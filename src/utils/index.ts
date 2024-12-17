@@ -1,6 +1,6 @@
 import {
     ActionRowBuilder, BaseMessageOptions, ButtonBuilder, ButtonStyle, Collection, EmbedBuilder,
-    Guild, Message, MessageCreateOptions, MessageFlags, TextChannel
+    Guild, Message, MessageCreateOptions, MessageFlags, PublicThreadChannel, TextChannel
 } from "discord.js";
 import Database from 'better-sqlite3';
 import { encrypt } from "./crypto";
@@ -58,21 +58,16 @@ export const removeBonusValue = (bonusPart: string) => bonusPart.replace(/\|{0,2
 export const formatPercent = (value: number | null | undefined, minimumIntegerDigits: number | undefined = undefined, minimumFractionDigits: number = 0) => value == null || value == undefined ? "" : value.toLocaleString(undefined, { style: 'percent', minimumFractionDigits, minimumIntegerDigits });
 export const formatDecimal = (value: number | null | undefined, fractionDigits: number = 0) => value == null || value == undefined ? "" : value?.toFixed(fractionDigits);
 export const isNumeric = (value: string) => (/^-?\d+$/.test(value));
+export const getQuestionNumber = (question: string) => (question.replaceAll("\\", "").match(/(^\d+)\.\s*/)?.shift()?.trim().replace("\.", "") || "");
 
 export const getCategoryName = (metadata: string | undefined) => {
     let category = "";
     if (metadata) {
         metadata = removeSpoilers(metadata);
-        let results = metadata.match(/([A-Z]{2,3}), (.*)/);
+        let results = metadata.match(/(.*), (.*)/);
 
         if (results) {
             category = results[2].trim();
-        }
-
-        results = metadata.match(/(.*), ([A-Z]{2,3})/);
-
-        if (results) {
-            category = results[1].trim();
         }
     }
 
@@ -321,6 +316,32 @@ export const getThreadAndUpdateSummary = async (userProgress: UserProgress, thre
     return thread!;
 }
 
+export async function addRoles(
+    message: Message,
+    thread: PublicThreadChannel,
+    roleName: string,
+    verbose: boolean = false,
+    note = "-# (Click \"Jump\" at question's upper-right to see its reactions in the main channel.)"
+) {
+    await message.guild?.members.fetch().then(members => {
+        let roleUsers = members.filter(member => member.roles.cache.find(role => role.name === roleName));
+        roleUsers.forEach(async u => {
+            console.log(`Role: ${roleName}; User tag: ${u.user.tag}; User ID: ${u.user.id}`);
+            if (u.permissionsIn(message.channel.id).has("ViewChannel")) {
+                await thread.members.add(u.user);
+            }
+        });
+        // console.log(`Users with ${roleName} role: ${roleUsers.map(u => u.user.username).join(", ")}`);
+    });
+
+    if (verbose) {
+        await thread.send(
+            `Role: ${roleName}` +
+            (note ? "\n" + note : "")
+        );
+    }
+}
+
 export async function getTossupSummary(questionId: string, questionParts: string[], answer: string, questionUrl: string) {
     let tossupSummary = `## Results\n` +
         `### ANSWER: ||${shortenAnswerline(answer)}||\n`;
@@ -331,16 +352,16 @@ export async function getTossupSummary(questionId: string, questionParts: string
         index: parseInt(key),
         buzzes: value
     }));
-    const totalCharacters = questionParts.join('').length;
+    const totalCharacters = questionParts.join("").length;
     let point_values: number[] = [15, 10, 0, -5];
     let points_emoji_names: string[] = ["15", "10", "DNC", "neg5"];
     points_emoji_names = points_emoji_names.map(i => "tossup_" + i);
     let points_emojis = await getEmojiList(points_emoji_names);
 
     groupedBuzzes.forEach(async function (buzzpoint) {
-        let cumulativeCharacters = questionParts.slice(0, buzzpoint.index + 1).join('').length;
+        let cumulativeCharacters = questionParts.slice(0, buzzpoint.index + 1).join("").length;
         let point_value_msgs: string[] = [];
-        let lineSummary = `${formatPercent(cumulativeCharacters / totalCharacters)} | (||${questionParts[buzzpoint.index].substring(0, 30)}||) | `;
+        let lineSummary = `${formatPercent(cumulativeCharacters / totalCharacters)} (||${questionParts[buzzpoint.index].substring(0, 30)}||) `;
 
         point_values.forEach(async function (point_value: number, i) {
             let point_value_count = buzzpoint.buzzes?.filter(b => b.value == point_value)?.length || 0;
@@ -349,7 +370,7 @@ export async function getTossupSummary(questionId: string, questionParts: string
             }
         })
 
-        lineSummary += point_value_msgs.join(' | ');
+        lineSummary += point_value_msgs.join("   ");
         tossupSummary += lineSummary + "\n";
     });
 
@@ -406,20 +427,26 @@ export const buildButtonMessage = (buttonID: string = "play_question", primaryBu
     return { components: [buttons] } as BaseMessageOptions;
 }
 
-export const getToFirstIndicator = (clue: string) => {
-    clue = removeSpoilers(clue);
-    const words = clue.split(' ');
-    const thisIndex = words.findIndex(w => w.toLocaleLowerCase() === 'this' || w.toLocaleLowerCase() === 'these');
-    const defaultSize = 30;
+export const getToFirstIndicator = (clue: string, limit: number = 35) => {
+    const charLimit = limit <= 0 ? 100 : limit;
+    let trimmedClue = removeSpoilers(clue);
+    const words = trimmedClue.split(" ");
+    const thisIndex = words.findIndex(w => w.toLocaleLowerCase() === "this" || w.toLocaleLowerCase() === "these");
 
     // if "this" or "these" is in the string and isn't the first word,
-    // truncate after first pronoun: https://github.com/JemCasey/playtesting-bot/issues/8
+    // truncate shortly after first pronoun: https://github.com/JemCasey/playtesting-bot/issues/8
     if (thisIndex > 0) {
-        const endIndex = thisIndex + 2;
+        trimmedClue = words.slice(0, thisIndex + 2).join(" ");
+    }
 
-        return `${words.slice(0, endIndex).join(' ')}${endIndex >= words.length ? '' : '...'}`;
-    } else {
-        return `${clue.substring(0, defaultSize)}${clue.length > defaultSize ? '...' : ''}`;
+    return `${trimmedClue.substring(0, charLimit)}${trimmedClue.length > charLimit ? "..." : ""}`;
+}
+
+export const removeQuestionNumber = (question: string, get: boolean = false) => {
+    if (get) { // Extract the question number
+        return question.replace("\\", "").replace(/(^\d+)\.\s*/, "$1");
+    } else { // Remove the question number
+        return question.replace("\\", "").replaceAll(/^\d+\.\s*/g, "");
     }
 }
 

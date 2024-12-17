@@ -1,6 +1,7 @@
 import { Client, Message, TextChannel } from "discord.js";
+import { asyncCharLimit } from "src/constants";
 import KeySingleton from "src/services/keySingleton";
-import { UserBonusProgress, getEmbeddedMessage, getServerChannels, getSilentMessage, getThreadAndUpdateSummary, getToFirstIndicator, removeBonusValue, removeSpoilers, saveBonusDirect, shortenAnswerline } from "src/utils";
+import { UserBonusProgress, getEmbeddedMessage, getServerChannels, getSilentMessage, getThreadAndUpdateSummary, getToFirstIndicator, removeQuestionNumber, removeBonusValue, removeSpoilers, saveBonusDirect, shortenAnswerline } from "src/utils";
 import { getEmojiList } from "src/utils/emojis";
 
 export default async function handleBonusPlaytest(message: Message<boolean>, client: Client<boolean>, userProgress: UserBonusProgress, setUserProgress: (key: any, value: any) => void, deleteUserProgress: (key: any) => void) {
@@ -81,10 +82,10 @@ export default async function handleBonusPlaytest(message: Message<boolean>, cli
             let emoji_summary = await getEmojiList(points_emoji_names);
 
             resultMessage += emoji_summary.join(' ');
-            resultMessage += ` <@${message.author.id}> scored ${totalPoints} points: `;
+            resultMessage += ` ${totalPoints} <@${message.author.id}> `;
             resultMessage += partMessages.join(', ');
 
-            const fallbackName = getToFirstIndicator(userProgress.leadin.replace("\\", "").replaceAll(/^\d+\.\s*/g, ""));
+            const fallbackName = getToFirstIndicator(removeQuestionNumber(userProgress.leadin), asyncCharLimit);
             const threadName = `B | ${userProgress.authorName} | "${fallbackName}"`;
             const resultsChannel = client.channels.cache.get(resultChannel!.result_channel_id) as TextChannel;
             const playtestingChannel = client.channels.cache.get(userProgress.channelId) as TextChannel;

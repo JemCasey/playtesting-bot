@@ -1,16 +1,18 @@
 import { Message, Application, TextChannel } from "discord.js";
-import { BONUS_DIFFICULTY_REGEX, BONUS_REGEX, TOSSUP_REGEX } from "src/constants";
+import { asyncCharLimit, BONUS_DIFFICULTY_REGEX, BONUS_REGEX, bulkCharLimit, TOSSUP_REGEX } from "src/constants";
 import KeySingleton from "src/services/keySingleton";
-import { buildButtonMessage, getCategoryCount, getServerChannels, getTossupParts, getToFirstIndicator, removeSpoilers, saveBonus, BonusPart, saveTossup, shortenAnswerline, getCategoryName, getCategoryRole, isNumeric, serverSettings, ServerChannel } from "src/utils";
+import { buildButtonMessage, getCategoryCount, getServerChannels, getTossupParts, getToFirstIndicator, removeSpoilers, saveBonus, BonusPart, saveTossup, shortenAnswerline, getCategoryName, getCategoryRole, isNumeric, serverSettings, ServerChannel, removeQuestionNumber, getQuestionNumber, addRoles } from "src/utils";
 import { client } from "src/bot";
-import { reactEmojiList } from "src/utils/emojis";
+import { getEmojiList, reactEmojiList } from "src/utils/emojis";
 
 async function handleThread(msgChannel: ServerChannel, message: Message, isBonus: boolean, question: string, metadata: string, questionNumber: string = "") {
     let thisServerSetting = serverSettings.find(ss => ss.serverId == message.guild!.id);
     let threadName = "Discussion Thread";
-    let fallbackName = getToFirstIndicator(question.replace("\\", "").replaceAll(/^\d+\.\s*/g, ""));
+    let fallbackName = getToFirstIndicator(removeQuestionNumber(question), msgChannel.channel_type === 2 ? bulkCharLimit : asyncCharLimit);
     let categoryName = getCategoryName(metadata);
     let categoryRoleName = getCategoryRole(categoryName);
+    // console.log(`Metadata: ${metadata}`);
+    // console.log(`Category Name: ${categoryName}; Category Role Name: ${categoryRoleName}`);
 
     if (msgChannel.channel_type === 2) {
         threadName = metadata ?
@@ -31,28 +33,8 @@ async function handleThread(msgChannel: ServerChannel, message: Message, isBonus
         if (msgChannel.channel_type !== 2) {
             await thread.members.add(message.author);
         }
-
-        await message.guild?.members.fetch().then(members => {
-            let headEditorUsers = members.filter(member => member.roles.cache.find(role => role.name === "Head Editor"));
-            headEditorUsers.forEach(async u => {
-                console.log(`Role: Head Editor; User tag: ${u.user.tag}; User ID: ${u.user.id}`);
-                if (u.permissionsIn(message.channel.id).has("ViewChannel")) {
-                    await thread.members.add(u.user);
-                }
-            });
-            console.log(`Users with Head Editor role: ${headEditorUsers.map(u => u.user.username).join(", ")}`);
-        });
-
-        await message.guild?.members.fetch().then(members => {
-            let categoryUsers = members.filter(member => member.roles.cache.find(role => role.name === categoryRoleName));
-            categoryUsers.forEach(async u => {
-                console.log(`Role: ${categoryRoleName}; User tag: ${u.user.tag}; User ID: ${u.user.id}`);
-                if (u.permissionsIn(message.channel.id).has("ViewChannel")) {
-                    await thread.members.add(u.user);
-                }
-            });
-            console.log(`Users with ${categoryRoleName} role: ${categoryUsers.map(u => u.user.username).join(", ")}`);
-        });
+        await addRoles(message, thread, "Head Editor", false);
+        await addRoles(message, thread, categoryRoleName, true);
     }
 }
 
@@ -105,7 +87,7 @@ export default async function handleNewQuestion(message: Message<boolean>) {
         ];
         let questionNumber = "";
         let questionEcho = "";
-        // let answersEcho: string[] = [];
+        let answersEcho: string[] = [];
 
         if (bonusMatch) {
             const [_, leadin, part1, answer1, part2, answer2, part3, answer3, metadata, difficultyPart1, difficultyPart2, difficultyPart3] = bonusMatch;
@@ -114,7 +96,7 @@ export default async function handleNewQuestion(message: Message<boolean>) {
             const difficulty3Match = part3.match(BONUS_DIFFICULTY_REGEX) || [];
             threadQuestionText = leadin;
             threadMetadata = removeSpoilers(metadata);
-            questionNumber = leadin.slice(0, 4).replace(".", "").trim();
+            questionNumber = getQuestionNumber(leadin);
 
             difficulties = [
                 { part: 1, answer: shortenAnswerline(answer1), difficulty: difficultyPart1 || difficulty1Match[1] || "e" },
@@ -126,9 +108,9 @@ export default async function handleNewQuestion(message: Message<boolean>) {
             } else if (msgChannel.channel_type === 1) {
                 saveBonus(message.id, message.guildId!, message.author.id, getCategoryName(threadMetadata), difficulties, key);
             }
-            // answersEcho.push(shortenAnswerline(answer1));
-            // answersEcho.push(shortenAnswerline(answer2));
-            // answersEcho.push(shortenAnswerline(answer3));
+            answersEcho.push(shortenAnswerline(answer1));
+            answersEcho.push(shortenAnswerline(answer2));
+            answersEcho.push(shortenAnswerline(answer3));
         } else if (tossupMatch) {
             const [_, question, answer, metadata] = tossupMatch;
             const tossupParts = getTossupParts(question);
@@ -137,7 +119,7 @@ export default async function handleNewQuestion(message: Message<boolean>) {
             }, 0);
             threadQuestionText = question;
             threadMetadata = removeSpoilers(metadata);
-            questionNumber = question.slice(0, 4).replace(".", "").trim();
+            questionNumber = getQuestionNumber(question);
 
             // if a tossup was sent that has 2 or fewer spoiler tagged sections, assume that it's not meant to be played
             if (tossupParts.length <= 2)
@@ -148,7 +130,7 @@ export default async function handleNewQuestion(message: Message<boolean>) {
             } else if (msgChannel.channel_type === 1) {
                 saveTossup(message.id, message.guildId!, message.author.id, questionLength, getCategoryName(threadMetadata), shortenAnswerline(answer), key);
             }
-            // answersEcho.push(shortenAnswerline(answer));
+            answersEcho.push(shortenAnswerline(answer));
         }
 
         if (msgChannel.channel_type !== 3) {
@@ -159,13 +141,15 @@ export default async function handleNewQuestion(message: Message<boolean>) {
                     if (thisServerSetting?.echoWhole) {
                         questionEcho = message.content.replaceAll("!t", "").trim();
                     } else {
+                        let answer_emoji = await getEmojiList(["answer"]);
                         questionEcho = "### [" +
                         (!!bonusMatch ? "Bonus" : "Tossup") +
                         (isNumeric(questionNumber) ? (" " + questionNumber) : "") + " - " +
                         getCategoryName(threadMetadata) +
                         "](" + message.url + ") - " +
-                        "||" + getToFirstIndicator(threadQuestionText.replace("\\", "").replaceAll(/^\d+\.\s*/g, "")) + "||";
-                        // questionEcho += answersEcho.join(" / ") + "||";
+                        ((answer_emoji[0] + " ") || "") +
+                        "||" + answersEcho.join(" / ") + "||";
+                        // questionEcho += " - ||" + getToFirstIndicator(removeQuestionNumber(threadQuestionText), bulkCharLimit) + "||";
                     }
                     echoQuestion(questionEcho, message.url, echoChannelId, thisServerSetting?.echoWhole || false).then(echoURL => {
                         if (message.content.includes('!t')) {
