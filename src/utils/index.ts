@@ -324,14 +324,15 @@ export async function addRoles(
     note = "-# (Click \"Jump\" at question's upper-right to see its reactions in the main channel.)"
 ) {
     await message.guild?.members.fetch().then(members => {
-        let roleUsers = members.filter(member => member.roles.cache.find(role => role.name === roleName));
+        let roleUsers = members.filter(member => (
+            member.roles.cache.find(role => role.name === roleName) &&
+            member.permissionsIn(message.channel.id).has("ViewChannel")
+        ));
         roleUsers.forEach(async u => {
-            console.log(`Role: ${roleName}; User tag: ${u.user.tag}; User ID: ${u.user.id}`);
-            if (u.permissionsIn(message.channel.id).has("ViewChannel")) {
-                await thread.members.add(u.user);
-            }
+            // console.log(`Role: ${roleName}; User tag: ${u.user.tag}; User ID: ${u.user.id}`);
+            await thread.members.add(u.user);
         });
-        // console.log(`Users with ${roleName} role: ${roleUsers.map(u => u.user.username).join(", ")}`);
+        // console.log(`Users with ${roleName} role and permissions to view channel: ${roleUsers.map(u => u.user.username).join(", ")}`);
     });
 
     if (verbose) {
@@ -361,7 +362,7 @@ export async function getTossupSummary(questionId: string, questionParts: string
     groupedBuzzes.forEach(async function (buzzpoint) {
         let cumulativeCharacters = questionParts.slice(0, buzzpoint.index + 1).join("").length;
         let point_value_msgs: string[] = [];
-        let lineSummary = `${formatPercent(cumulativeCharacters / totalCharacters)} (||${questionParts[buzzpoint.index].substring(0, 30)}||) `;
+        let lineSummary = `${formatPercent(cumulativeCharacters / totalCharacters)} (||${questionParts[buzzpoint.index].substring(0, 30)}||)   `;
 
         point_values.forEach(async function (point_value: number, i) {
             let point_value_count = buzzpoint.buzzes?.filter(b => b.value == point_value)?.length || 0;
