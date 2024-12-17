@@ -61,7 +61,7 @@ To set up a question for playtesting through the bot, add spoiler marks as per t
 
 <code>\*\*||This thinker claimed to see “another universe” upon reading an essay prompt asking whether culture leads to “the purification of morals.”|| ||This thinker’s story of hunters who defect to pursue a hare inspired Brian Skyrms’s “stag hunt” game.|| ||This thinker accused David Hume of plotting against him while Hume sheltered him during the fallout over one of his books,|| ||which notes that those who “refuse” to join the “whole body” will be “forced to be free.”|| ||This thinker defined (\*)||\*\* ||\_amour-propre\_ and \_amour de soi\_|| ||in a book that traces civil society to the first man who “enclosed a piece of ground” and declared, “This is mine.”|| ||This thinker theorized the “general will”|| ||in a book that claims man is “everywhere… in chains.”|| ||For 10 points, name this author of \_Discourse on Inequality\_ and \_The Social Contract\_.||
 ANSWER: ||Jean-Jacques \_\_\*\*Rousseau\*\*\_\_||
-\<JB\, ||Philosophy||\>
+\<JB\, Philosophy\>
 !t</code>
 
 ##### Bonus Formatting
@@ -73,14 +73,14 @@ ANSWER: ||James Fenimore \_\_\*\*Cooper\*\*\_\_||
 ANSWER: ||\_The\_\_\*\*Last of the Mohicans\*\*\_\_\_||
 [10] ||In \_The Pioneers\_, Natty is arrested for performing this action after Templeton adopts anti-waste laws. Natty’s rifle is nicknamed for this action, which titles the chronologically first Leatherstocking Tale.||
 ANSWER: ||\_\_\*\*kill\*\*\_\_ing a \_\_\*\*deer\*\*\_\_ [accept any synonyms in place of “killing,” such as \_\_\*\*hunt\*\*\_\_ing or \_\_\*\*shoot\*\*\_\_ing; accept \_\_\*\*Killdeer\*\*\_\_ or \_The \_\_\*\*Deerslay\*\*\_\_er\_; prompt on partial answers]||
-\<JB\, ||American Literature||\>
+\<JB\, American Literature\>
 ||h/e/m||
 !t</code>
 
 > [!TIP]
  > The formatting style seen above is the default output style used by the [Paster Dingus](https://minkowski.space/quizbowl/paster/). An alternative style is to add the difficulty marks inside each `[10]` tag in the form `10||h||`.
 
-### Asynchronous Playtesting
+#### Asynchronous Playtesting
 
 To play [an asynchronous question that has been detected by the bot](./examples/async-question.png):
 
@@ -88,7 +88,7 @@ To play [an asynchronous question that has been detected by the bot](./examples/
 * Look for a DM from the bot. Use the keyboard commands described by the bot to interact with the question.
 * When you're done, your result will be shared in [a thread in the designated playtesting results channel](./examples/async-results.png).
 
-### Bulk Playtesting
+#### Bulk Playtesting
 
 * To begin reading a packet (e.g. `Packet A`), send the message `!read A` or `!packet A` or `!round A`.
 * [For each question in the packet to be playtested](./examples/bulk.png):
