@@ -8,24 +8,12 @@ import { sum, group, listify } from 'radash'
 import { getBonusSummaryData } from "./queries";
 import { getEmojiList } from "src/utils/emojis";
 
-
-export var serverSettings: ServerSettings[] = [];
-
-export function setPacketName(serverId: string, desiredPacketName: string) {
-    let thisServer = serverSettings.find(ss => ss.serverId == serverId);
-    if (thisServer) {
-        thisServer.packetName = desiredPacketName;
-    }
-}
-
-export function setEchoWhole(serverId: string, echoWholeSetting: boolean) {
-    let thisServer = serverSettings.find(ss => ss.serverId == serverId);
-    if (thisServer) {
-        thisServer.echoWhole = echoWholeSetting;
-    }
-}
-
 const db = new Database('database.db');
+
+export const deleteServerSettingsCommand = db.prepare('DELETE FROM server_setting WHERE server_id = ?');
+export const insertServerSettingCommmand = db.prepare('INSERT INTO server_setting (server_id, packet_name, echo_setting) VALUES (?, ?, ?)');
+const updatePacketNameCommand = db.prepare('UPDATE server_setting SET packet_name = ? WHERE server_id = ?');
+const getServerSettingsQuery = db.prepare('SELECT * FROM server_setting WHERE server_id = ?');
 
 export const deleteServerChannelsCommand = db.prepare('DELETE FROM server_channel WHERE server_id = ?');
 const insertServerChannelCommand = db.prepare('INSERT INTO server_channel (server_id, channel_id, result_channel_id, channel_type) VALUES (?, ?, ?, ?)');
@@ -96,9 +84,9 @@ export const getCategoryRole = (category: string) => {
 }
 
 export type ServerSettings = {
-    serverId: string;
-    packetName: string;
-    echoWhole: boolean;
+    server_id: string;
+    packet_name: string;
+    echo_setting: number;
 }
 
 export enum ServerChannelType {
@@ -316,6 +304,15 @@ export const getThreadAndUpdateSummary = async (userProgress: UserProgress, thre
     return thread!;
 }
 
+export const getServerSettings = (serverId: string) => {
+    return getServerSettingsQuery.all(serverId) as ServerSettings[];
+}
+
+export const updatePacketName = (serverId: string, desired_packet_name: string) => {
+    updatePacketNameCommand.run(desired_packet_name, serverId);
+    return getServerSettings(serverId).find(ss => ss.server_id == serverId)?.packet_name || "";
+}
+
 export async function addRoles(
     message: Message,
     thread: PublicThreadChannel,
@@ -329,10 +326,10 @@ export async function addRoles(
             member.permissionsIn(message.channel.id).has("ViewChannel")
         ));
         roleUsers.forEach(async u => {
-            // console.log(`Role: ${roleName}; User tag: ${u.user.tag}; User ID: ${u.user.id}`);
+            console.log(`Role: ${roleName}; User tag: ${u.user.tag}; User ID: ${u.user.id}`);
             await thread.members.add(u.user);
         });
-        // console.log(`Users with ${roleName} role and permissions to view channel: ${roleUsers.map(u => u.user.username).join(", ")}`);
+        console.log(`Users with ${roleName} role and permissions to view channel: ${roleUsers.map(u => u.user.username).join(", ")}`);
     });
 
     if (verbose) {

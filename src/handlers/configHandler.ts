@@ -1,6 +1,6 @@
 import { Message, TextChannel } from "discord.js";
 import { SECRET_ROLE } from "src/constants";
-import { saveAsyncServerChannelsFromMessage, saveBulkServerChannelsFromMessage, deleteServerChannelsCommand, serverSettings, ServerSettings, setEchoWhole } from "src/utils";
+import { saveAsyncServerChannelsFromMessage, saveBulkServerChannelsFromMessage, deleteServerChannelsCommand, deleteServerSettingsCommand, insertServerSettingCommmand } from "src/utils";
 
 export default async function handleConfig(message: Message<boolean>) {
     const msgChannel = (await message.channel.fetch() as TextChannel);
@@ -16,6 +16,7 @@ export default async function handleConfig(message: Message<boolean>) {
         });
 
         deleteServerChannelsCommand.run(message.guild!.id);
+        deleteServerSettingsCommand.run(message.guild!.id);
 
         let async_channels = saveAsyncServerChannelsFromMessage(collected, message.guild!);
 
@@ -59,21 +60,11 @@ export default async function handleConfig(message: Message<boolean>) {
                             max: 1
                         });
 
-                        let serverSetting : ServerSettings;
                         if (collected?.first()?.content.includes("1")) {
-                            serverSetting = {
-                                serverId: message.guildId!,
-                                packetName: "",
-                                echoWhole: false,
-                            };
+                            insertServerSettingCommmand.run(message.guildId!, "", 1);
                         } else {
-                            serverSetting = {
-                                serverId: message.guildId!,
-                                packetName: "",
-                                echoWhole: true,
-                            };
+                            insertServerSettingCommmand.run(message.guildId!, "", 2);
                         }
-                        serverSettings.push(serverSetting);
                     } catch {
                         await msgChannel.send("An error occurred, please try again.");
                     }

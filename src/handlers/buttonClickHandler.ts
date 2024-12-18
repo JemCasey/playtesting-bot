@@ -1,6 +1,6 @@
 import { Interaction } from "discord.js";
 import { BONUS_DIFFICULTY_REGEX, BONUS_REGEX, bulkCharLimit, TOSSUP_REGEX } from "src/constants";
-import { buildButtonMessage, QuestionType, UserBonusProgress, UserProgress, UserTossupProgress, getEmbeddedMessage, getTossupParts, getToFirstIndicator, removeBonusValue, removeSpoilers, getCategoryName, getCategoryRole, isNumeric, serverSettings, removeQuestionNumber, getQuestionNumber, addRoles } from "src/utils";
+import { buildButtonMessage, QuestionType, UserBonusProgress, UserProgress, UserTossupProgress, getEmbeddedMessage, getTossupParts, getToFirstIndicator, removeBonusValue, removeSpoilers, getCategoryName, getCategoryRole, isNumeric, removeQuestionNumber, getQuestionNumber, addRoles, getServerSettings } from "src/utils";
 
 export default async function handleButtonClick(interaction: Interaction, userProgress: Map<string, UserProgress>, setUserProgress: (key: any, value: any) => void) {
     if (interaction.isButton() && interaction.customId === 'play_question') {
@@ -73,7 +73,7 @@ export default async function handleButtonClick(interaction: Interaction, userPr
     } else if (interaction.isButton() && interaction.customId === 'bulk_thread') {
         const message = await interaction.message.channel.messages.fetch(interaction.message.id);
 
-        let thisServerSetting = serverSettings.find(ss => ss.serverId == message.guild!.id);
+        let thisServerSetting = getServerSettings(message.guild!.id).find(ss => ss.server_id == message.guild!.id);
         if (message?.reference?.messageId) {
             const questionMessage = await interaction.message.channel.messages.fetch(message.reference.messageId);
             const bonusMatch = questionMessage.content.match(BONUS_REGEX);
@@ -96,7 +96,7 @@ export default async function handleButtonClick(interaction: Interaction, userPr
 
                 fallbackName = getToFirstIndicator(removeQuestionNumber(leadin), bulkCharLimit);
                 threadName = metadata ?
-                    `${thisServerSetting?.packetName ? thisServerSetting?.packetName + "." : ""}B${isNumeric(questionNumber) ? questionNumber: ""} | ${categoryName} | ${fallbackName}` :
+                    `${thisServerSetting?.packet_name ? thisServerSetting?.packet_name + "." : ""}B${isNumeric(questionNumber) ? questionNumber: ""} | ${categoryName} | ${fallbackName}` :
                     `B | ${getToFirstIndicator(fallbackName)}`;
             } else if (tossupMatch) {
                 let [_, question, answer, metadata] = tossupMatch;
@@ -109,7 +109,7 @@ export default async function handleButtonClick(interaction: Interaction, userPr
 
                 fallbackName = getToFirstIndicator(removeQuestionNumber(question), bulkCharLimit);
                 threadName = metadata ?
-                    `${thisServerSetting?.packetName ? thisServerSetting?.packetName + "." : ""}T${isNumeric(questionNumber) ? questionNumber: ""} | ${categoryName} | ${fallbackName}` :
+                    `${thisServerSetting?.packet_name ? thisServerSetting?.packet_name + "." : ""}T${isNumeric(questionNumber) ? questionNumber: ""} | ${categoryName} | ${fallbackName}` :
                     `T | ${fallbackName}`;
             }
 

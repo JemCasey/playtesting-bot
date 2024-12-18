@@ -1,12 +1,12 @@
 import { Message, Application, TextChannel } from "discord.js";
 import { asyncCharLimit, BONUS_DIFFICULTY_REGEX, BONUS_REGEX, bulkCharLimit, TOSSUP_REGEX } from "src/constants";
 import KeySingleton from "src/services/keySingleton";
-import { buildButtonMessage, getCategoryCount, getServerChannels, getTossupParts, getToFirstIndicator, removeSpoilers, saveBonus, BonusPart, saveTossup, shortenAnswerline, getCategoryName, getCategoryRole, isNumeric, serverSettings, ServerChannel, removeQuestionNumber, getQuestionNumber, addRoles } from "src/utils";
+import { buildButtonMessage, getCategoryCount, getServerChannels, getTossupParts, getToFirstIndicator, removeSpoilers, saveBonus, BonusPart, saveTossup, shortenAnswerline, getCategoryName, getCategoryRole, isNumeric, ServerChannel, removeQuestionNumber, getQuestionNumber, addRoles, getServerSettings } from "src/utils";
 import { client } from "src/bot";
 import { getEmojiList, reactEmojiList } from "src/utils/emojis";
 
 async function handleThread(msgChannel: ServerChannel, message: Message, isBonus: boolean, question: string, metadata: string, questionNumber: string = "") {
-    let thisServerSetting = serverSettings.find(ss => ss.serverId == message.guild!.id);
+    let thisServerSetting = getServerSettings(message.guild!.id).find(ss => ss.server_id == message.guild!.id);
     let threadName = "Discussion Thread";
     let fallbackName = getToFirstIndicator(removeQuestionNumber(question), msgChannel.channel_type === 2 ? bulkCharLimit : asyncCharLimit);
     let categoryName = getCategoryName(metadata);
@@ -16,7 +16,7 @@ async function handleThread(msgChannel: ServerChannel, message: Message, isBonus
 
     if (msgChannel.channel_type === 2) {
         threadName = metadata ?
-            `${thisServerSetting?.packetName ? thisServerSetting?.packetName + "." : ""}${isBonus ? "B" : "T"}${questionNumber} | ${categoryName} | ${fallbackName}` :
+            `${thisServerSetting?.packet_name ? thisServerSetting?.packet_name + "." : ""}${isBonus ? "B" : "T"}${questionNumber} | ${categoryName} | ${fallbackName}` :
             `"${fallbackName}"`;
     } else if (msgChannel.channel_type === 1) {
         threadName = metadata ?
@@ -137,8 +137,8 @@ export default async function handleNewQuestion(message: Message<boolean>) {
             if (msgChannel.channel_type === 2) {
                 const echoChannelId = playtestingChannels.find(c => (c.channel_type === 3))?.channel_id;
                 if (echoChannelId) {
-                    let thisServerSetting = serverSettings.find(ss => ss.serverId == message.guild!.id);
-                    if (thisServerSetting?.echoWhole) {
+                    let thisServerSetting = getServerSettings(message.guild!.id).find(ss => ss.server_id == message.guild!.id);
+                    if (thisServerSetting?.echo_setting === 2) {
                         questionEcho = message.content.replaceAll("!t", "").trim();
                     } else {
                         let answer_emoji = await getEmojiList(["answer"]);
@@ -151,7 +151,7 @@ export default async function handleNewQuestion(message: Message<boolean>) {
                         "||" + answersEcho.join(" / ") + "||";
                         // questionEcho += " - ||" + getToFirstIndicator(removeQuestionNumber(threadQuestionText), bulkCharLimit) + "||";
                     }
-                    echoQuestion(questionEcho, message.url, echoChannelId, thisServerSetting?.echoWhole || false).then(echoURL => {
+                    echoQuestion(questionEcho, message.url, echoChannelId, thisServerSetting?.echo_setting === 2 || false).then(echoURL => {
                         if (message.content.includes('!t')) {
                             message.reply(buildButtonMessage("echo", "Return to List", echoURL));
                         } else {
