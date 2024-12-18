@@ -10,7 +10,7 @@ export default async function handleButtonClick(interaction: Interaction, userPr
             const questionMessage = await interaction.message.channel.messages.fetch(message.reference.messageId);
             const bonusMatch = questionMessage.content.match(BONUS_REGEX);
             const tossupMatch = questionMessage.content.match(TOSSUP_REGEX);
-            const authorName = questionMessage.member?.displayName ?? questionMessage.author.username;
+            const authorName = (questionMessage.member?.displayName ?? questionMessage.author.username).split(" ")[0];
 
             if (userProgress.get(interaction.user.id)) {
                 await interaction.user.send(getEmbeddedMessage("You tried to start playtesting a question but have a different question reading in progress. Please complete that reading or type `x` to end it, then try again."));
