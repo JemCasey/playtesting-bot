@@ -12,6 +12,14 @@ db.exec(`
 `);
 
 db.exec(`
+  CREATE TABLE IF NOT EXISTS server_setting (
+    server_id TEXT PRIMARY KEY,
+    packet_name TEXT,
+    echo_setting INT
+  )
+`);
+
+db.exec(`
 CREATE TABLE IF NOT EXISTS tossup (
     question_id TEXT PRIMARY KEY,
     server_id TEXT,

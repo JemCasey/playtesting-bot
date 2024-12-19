@@ -5,3 +5,6 @@ export const SECRET_ROLE = "secret";
 
 export const CATEGORY = 'category';
 export const AUTHOR = 'author';
+
+export const asyncCharLimit = 60;
+export const bulkCharLimit = 35;
