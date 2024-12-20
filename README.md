@@ -106,8 +106,9 @@ To play [an asynchronous question that has been detected by the bot](./examples/
       * 0 points - `:bonus_0:`
       * Note that the bot will auto-order the bonus reacts based on the order of the bonus difficulties.
   * If configured, [the bot will send a link to the question in the echo channel](./examples/echo.png).
+* At any time, send the message `!packet` or `!round` to print the current packet name.
 * At any time, send the message `!tally` or `!count` to automatically tally the reacts to each question in the current packet and publish the counts to the echo channel.
-  * To tally reacts for any specific packet (e.g. `A`), send the message `!tally A` or `!count A`.
+  * To tally reacts for any specific packet (e.g. `Packet A`), send the message `!tally A` or `!count A`.
 * To finish the packet, send the message `!end`. This will tally reacts for the current packet and then reset the packet name.
 * To reset the packet name, send the message `!packet reset` or `!packet clear`.
 
