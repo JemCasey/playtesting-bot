@@ -95,8 +95,7 @@ To play [an asynchronous question that has been detected by the bot](./examples/
   * Paste the spoiler-tagged question in any of the bulk playtesting channels. Just like in asynchronous playtesting, adding `!t` to the question content will auto-create a discussion thread.
   * The bot will auto-react to the question message with a set of reacts depending on if it's a tossup or bonus:
     * Tossups
-      * Play Count (number of players who read the question) - `:play_count:`
-      * 15 points - `:tossup_15:`
+      * 15 points - `:tossup_15:` (if the tossup is powermarked with `(*)`)
       * 10 points - `:tossup_10:`
       * -5 points - `:tossup_neg5:`
       * DNC (did not convert) - `:tossup_DNC:`
@@ -107,7 +106,10 @@ To play [an asynchronous question that has been detected by the bot](./examples/
       * 0 points - `:bonus_0:`
       * Note that the bot will auto-order the bonus reacts based on the order of the bonus difficulties.
   * If configured, [the bot will send a link to the question in the echo channel](./examples/echo.png).
-* To reset the packet name, use `!packet reset` or `!packet clear`.
+* At any time, send the message `!tally` or `!count` to automatically tally the reacts to each question in the current packet and publish the counts to the echo channel.
+  * To tally reacts for any specific packet (e.g. `A`), send the message `!tally A` or `!count A`.
+* To finish the packet, send the message `!end`. This will tally reacts for the current packet and then reset the packet name.
+* To reset the packet name, send the message `!packet reset` or `!packet clear`.
 
 ## Instructions for Developers
 

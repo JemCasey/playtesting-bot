@@ -1,6 +1,6 @@
 import { Message, TextChannel } from "discord.js";
 import { SECRET_ROLE } from "src/constants";
-import { saveAsyncServerChannelsFromMessage, saveBulkServerChannelsFromMessage, deleteServerChannelsCommand, deleteServerSettingsCommand, insertServerSettingCommmand } from "src/utils";
+import { saveAsyncServerChannelsFromMessage, saveBulkServerChannelsFromMessage, deleteServerChannelsCommand, deleteServerSettingsCommand, insertServerSettingCommand } from "src/utils";
 
 export default async function handleConfig(message: Message<boolean>) {
     const msgChannel = (await message.channel.fetch() as TextChannel);
@@ -51,23 +51,7 @@ export default async function handleConfig(message: Message<boolean>) {
 
                     await msgChannel.send(`Successfully saved ${echo_channel.join(", ")} as the echo channel.`);
 
-                    await msgChannel.send(`Do you want to echo just the category / author tag (\`1\`, recommended) or the entire question (\`2\`)?`);
-
-                    try {
-                        let filter = (m: Message<boolean>) => m.author.id === message.author.id
-                        let collected = await msgChannel.awaitMessages({
-                            filter,
-                            max: 1
-                        });
-
-                        if (collected?.first()?.content.includes("1")) {
-                            insertServerSettingCommmand.run(message.guildId!, "", 1);
-                        } else {
-                            insertServerSettingCommmand.run(message.guildId!, "", 2);
-                        }
-                    } catch {
-                        await msgChannel.send("An error occurred, please try again.");
-                    }
+                    insertServerSettingCommand.run(message.guildId!, "");
                 } catch {
                     await msgChannel.send("An error occurred, please try again.");
                 }

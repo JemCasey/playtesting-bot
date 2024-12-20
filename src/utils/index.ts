@@ -11,7 +11,7 @@ import { getEmojiList } from "src/utils/emojis";
 const db = new Database('database.db');
 
 export const deleteServerSettingsCommand = db.prepare('DELETE FROM server_setting WHERE server_id = ?');
-export const insertServerSettingCommmand = db.prepare('INSERT INTO server_setting (server_id, packet_name, echo_setting) VALUES (?, ?, ?)');
+export const insertServerSettingCommand = db.prepare('INSERT INTO server_setting (server_id, packet_name) VALUES (?, ?)');
 const updatePacketNameCommand = db.prepare('UPDATE server_setting SET packet_name = ? WHERE server_id = ?');
 const getServerSettingsQuery = db.prepare('SELECT * FROM server_setting WHERE server_id = ?');
 
@@ -31,6 +31,10 @@ const getTossupBuzzesQuery = db.prepare('SELECT clue_index, value, characters_re
 const getTossupCategoryCountQuery = db.prepare('SELECT COUNT(*) AS category_count FROM tossup WHERE author_id = ? AND server_id = ? AND category = ?');
 const getBonusCategoryCountQuery = db.prepare('SELECT COUNT(*) AS category_count FROM bonus WHERE author_id = ? AND server_id = ? AND category = ?');
 
+const insertBulkQuestionCommand = db.prepare('INSERT INTO bulk (question_id, server_id, channel_id, packet_name, question_number, question_type, category, answers, echo_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+const getBulkQuestionsQuery = db.prepare('SELECT * FROM bulk where server_id = ?');
+const getBulkQuestionsInPacketQuery = db.prepare('SELECT * FROM bulk where server_id = ? AND packet_name = ?');
+
 const literature_names = ["literature", "lit", "drama", "poetry", "fiction"];
 const history_names = ["history", "historiography", "archeology"];
 const rmpss_names = ["religion", "myth", "phil", "social", "econ", "psych", "ling", "socio", "anthro", "law"]
@@ -40,7 +44,7 @@ const other_names = ["other", "academic", "geography", "current", "events", "pop
 
 type nullableString = string | null | undefined;
 
-export const removeSpoilers = (text: string) => text.replaceAll('||', '');
+export const removeSpoilers = (text: string) => text?.replaceAll('||', '') || "";
 export const shortenAnswerline = (answerline: string) => removeSpoilers(answerline.replace(/ \[.+\]/, '').replace(/ \(.+\)/, '')).trim();
 export const removeBonusValue = (bonusPart: string) => bonusPart.replace(/\|{0,2}\[10\|{0,2}[emh]?\|{0,2}]\|{0,2} ?/, '');
 export const formatPercent = (value: number | null | undefined, minimumIntegerDigits: number | undefined = undefined, minimumFractionDigits: number = 0) => value == null || value == undefined ? "" : value.toLocaleString(undefined, { style: 'percent', minimumFractionDigits, minimumIntegerDigits });
@@ -86,7 +90,6 @@ export const getCategoryRole = (category: string) => {
 export type ServerSettings = {
     server_id: string;
     packet_name: string;
-    echo_setting: number;
 }
 
 export enum ServerChannelType {
@@ -145,6 +148,18 @@ export type UserTossupProgress = UserProgress & {
     questionParts: string[];
     guesses: Guess[];
     answer: string;
+}
+
+export type BulkQuestion = {
+    question_id: string;
+    server_id: string;
+    channel_id: string;
+    packet_name: string;
+    question_number: number;
+    question_type: string;
+    category: string;
+    answers: string;
+    echo_id: string;
 }
 
 export const getTossupParts = (questionText: string) => {
@@ -313,6 +328,18 @@ export const updatePacketName = (serverId: string, desired_packet_name: string) 
     return getServerSettings(serverId).find(ss => ss.server_id == serverId)?.packet_name || "";
 }
 
+export const saveBulkQuestion = (serverId: string, questionId: string, channelId: string, packetName: string, questionNumber: number, questionType: string, category: string, answers: String[], echoId: string) => {
+    insertBulkQuestionCommand.run(questionId, serverId, channelId, packetName, questionNumber, questionType, category, answers.join(" / "), echoId);
+}
+
+export const getBulkQuestions = (serverId: string) => {
+    return getBulkQuestionsQuery.all(serverId) as BulkQuestion[];
+}
+
+export const getBulkQuestionsInPacket = (serverId: string, packetName: string) => {
+    return getBulkQuestionsInPacketQuery.all(serverId, packetName) as BulkQuestion[];
+}
+
 export async function addRoles(
     message: Message,
     thread: PublicThreadChannel,
@@ -326,10 +353,10 @@ export async function addRoles(
             member.permissionsIn(message.channel.id).has("ViewChannel")
         ));
         roleUsers.forEach(async u => {
-            console.log(`Role: ${roleName}; User tag: ${u.user.tag}; User ID: ${u.user.id}`);
+            // console.log(`Role: ${roleName}; User tag: ${u.user.tag}; User ID: ${u.user.id}`);
             await thread.members.add(u.user);
         });
-        console.log(`Users with ${roleName} role and permissions to view channel: ${roleUsers.map(u => u.user.username).join(", ")}`);
+        // console.log(`Users with ${roleName} role and permissions to view channel: ${roleUsers.map(u => u.user.username).join(", ")}`);
     });
 
     if (verbose) {
@@ -344,6 +371,7 @@ export async function getTossupSummary(questionId: string, questionParts: string
     let tossupSummary = `## Results\n` +
         `### ANSWER: ||${shortenAnswerline(answer)}||\n`;
     const buzzes = getTossupBuzzesQuery.all(questionId) as any[];
+    const powers = buzzes.filter(b => b.value > 10);
     const gets = buzzes.filter(b => b.value > 0);
     const negs = buzzes.filter(b => b.value < 0);
     const groupedBuzzes = listify(group(buzzes, b => b.clue_index), (key, value) => ({
@@ -373,7 +401,13 @@ export async function getTossupSummary(questionId: string, questionParts: string
     });
 
     tossupSummary +=
-        `\n**Plays:** ${buzzes.length}\t**Conversion Rate**: ${formatPercent(gets.length / buzzes.length)}\t` +
+        `\n**Plays**: ${buzzes.length}\t`;
+    if (questionParts.some(part => part.includes("\(\*\)")) && powers) {
+        tossupSummary +=
+            `**Power Rate**: ${formatPercent(powers.length / buzzes.length)}\t`;
+    }
+    tossupSummary +=
+        `**Conversion Rate**: ${formatPercent(gets.length / buzzes.length)}\t` +
         `**Neg Rate**: ${formatPercent(negs.length / buzzes.length)}\t` +
         `**Avg. Buzz**: ${formatDecimal(100 * (sum(gets, b => b.characters_revealed) / gets.length) / totalCharacters)}% ` +
         `(${formatDecimal(sum(gets, b => b.characters_revealed) / gets.length)})\n` +

@@ -52,7 +52,20 @@ export default async function handleTossupPlaytest(message: Message<boolean>, cl
         const resultChannel = getServerChannels(userProgress.serverId).find(s => (s.channel_id === userProgress.channelId && s.channel_type === 1));
         let resultMessage = "";
         let buzzIndex = userProgress.index >= userProgress.questionParts.length ? userProgress.questionParts.length - 1 : userProgress.index;
-        let value = message.content.toLowerCase().startsWith('y') ? 10 : (buzzIndex >= userProgress.questionParts.length - 1 ? 0 : -5);
+        let value = 0;
+        if (message.content.toLowerCase().startsWith('y')) {
+            if (userProgress.questionParts.some(part => part.includes("\(\*\)"))) {
+                value = 15;
+            } else {
+                value = 10;
+            }
+        } else {
+            if (buzzIndex >= userProgress.questionParts.length - 1) {
+                value = 0;
+            } else {
+                value = -5;
+            }
+        }
         let sanitizedNote = note ? note[1].replaceAll('||', '') : null;
         let countIndex = buzzIndex;
         let charactersRevealed = userProgress.questionParts[buzzIndex].length;

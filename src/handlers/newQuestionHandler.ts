@@ -1,7 +1,7 @@
 import { Message, Application, TextChannel } from "discord.js";
 import { asyncCharLimit, BONUS_DIFFICULTY_REGEX, BONUS_REGEX, bulkCharLimit, TOSSUP_REGEX } from "src/constants";
 import KeySingleton from "src/services/keySingleton";
-import { buildButtonMessage, getCategoryCount, getServerChannels, getTossupParts, getToFirstIndicator, removeSpoilers, saveBonus, BonusPart, saveTossup, shortenAnswerline, getCategoryName, getCategoryRole, isNumeric, ServerChannel, removeQuestionNumber, getQuestionNumber, addRoles, getServerSettings } from "src/utils";
+import { buildButtonMessage, getCategoryCount, getServerChannels, getTossupParts, getToFirstIndicator, removeSpoilers, saveBonus, BonusPart, saveTossup, shortenAnswerline, getCategoryName, getCategoryRole, isNumeric, ServerChannel, removeQuestionNumber, getQuestionNumber, addRoles, getServerSettings, saveBulkQuestion } from "src/utils";
 import { client } from "src/bot";
 import { getEmojiList, reactEmojiList } from "src/utils/emojis";
 
@@ -38,16 +38,9 @@ async function handleThread(msgChannel: ServerChannel, message: Message, isBonus
     }
 }
 
-export async function echoQuestion(question: string, questionUrl: string, echoChannelId: string, echoWhole: boolean) {
+async function echoQuestion(question: string, echoChannelId: string) {
     const echoChannel = (client.channels.cache.get(echoChannelId) as TextChannel);
-    let echoURL = "";
-    await echoChannel.send(question.replace("!t", "").trim()).then( echoMessage => {
-        if (echoWhole) {
-            echoMessage.reply(buildButtonMessage("echo", "Go to Question", questionUrl));
-        }
-        echoURL = echoMessage.url;
-    });
-    return echoURL;
+    return await echoChannel.send(question.replace("!t", "").trim());
 }
 
 async function handleReacts(message: Message, isBonus: boolean, parts: BonusPart[]) {
@@ -58,8 +51,11 @@ async function handleReacts(message: Message, isBonus: boolean, parts: BonusPart
         }
         reacts = [...reacts, "bonus_0"];
     } else {
+        if (message.content.includes("\(\*\)")) {
+            reacts = [...reacts, "tossup_15"];
+        }
         reacts = [
-            "play_count",
+            ...reacts,
             "tossup_10", "tossup_0", "tossup_neg5",
             "tossup_DNC",
             // "tossup_FTP",
@@ -138,26 +134,24 @@ export default async function handleNewQuestion(message: Message<boolean>) {
                 const echoChannelId = playtestingChannels.find(c => (c.channel_type === 3))?.channel_id;
                 if (echoChannelId) {
                     let thisServerSetting = getServerSettings(message.guild!.id).find(ss => ss.server_id == message.guild!.id);
-                    if (thisServerSetting?.echo_setting === 2) {
-                        questionEcho = message.content.replaceAll("!t", "").trim();
-                    } else {
-                        let answer_emoji = await getEmojiList(["answer"]);
+                    let answer_emoji = await getEmojiList(["answer"]);
                         questionEcho = "### [" +
                         (!!bonusMatch ? "Bonus" : "Tossup") +
                         (isNumeric(questionNumber) ? (" " + questionNumber) : "") + " - " +
                         getCategoryName(threadMetadata) +
-                        "](" + message.url + ") - " +
-                        ((answer_emoji[0] + " ") || "") +
+                        "](" + message.url + ")" + "\n" +
+                        "* " + ((answer_emoji[0] + " ") || "") +
                         "||" + answersEcho.join(" / ") + "||";
                         // questionEcho += " - ||" + getToFirstIndicator(removeQuestionNumber(threadQuestionText), bulkCharLimit) + "||";
-                    }
-                    echoQuestion(questionEcho, message.url, echoChannelId, thisServerSetting?.echo_setting === 2 || false).then(echoURL => {
+                    let echoMessage = await echoQuestion(questionEcho, echoChannelId);
+                    if (echoMessage) {
+                        saveBulkQuestion(message.guild!.id, message.id, msgChannel.channel_id, thisServerSetting?.packet_name || "", isNumeric(questionNumber) ? Number(questionNumber) : 0, (!!bonusMatch ? "B" : "T"), getCategoryName(threadMetadata), answersEcho, echoMessage.id);
                         if (message.content.includes('!t')) {
-                            message.reply(buildButtonMessage("echo", "Return to List", echoURL));
+                            message.reply(buildButtonMessage("echo", "Return to List", echoMessage?.url));
                         } else {
-                            message.reply(buildButtonMessage("bulk_thread", "Create Discussion Thread", "", "Go to Index", echoURL));
-                        }
-                    });
+                            message.reply(buildButtonMessage("bulk_thread", "Create Discussion Thread", "", "Go to Index", echoMessage?.url));
+                        };
+                    }
                 }
             } else if (msgChannel.channel_type === 1) {
                 await message.reply(buildButtonMessage("play_question", "Play " + (!!bonusMatch ? "Bonus" : "Tossup")));
