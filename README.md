@@ -90,7 +90,7 @@ To play [an asynchronous question that has been detected by the bot](./examples/
 
 #### Bulk Playtesting
 
-* To begin reading a packet (e.g. `Packet A`), send the message `!read A` or `!packet A` or `!round A`.
+* To begin reading a packet (e.g. `Packet A`), send the message `!read A` or `!packet A` or `!round A`. [^2]
 * [For each question in the packet to be playtested](./examples/bulk.png):
   * Paste the spoiler-tagged question in any of the bulk playtesting channels. Just like in asynchronous playtesting, adding `!t` to the question content will auto-create a discussion thread.
   * The bot will auto-react to the question message with a set of reacts depending on if it's a tossup or bonus:
@@ -181,3 +181,5 @@ As [mentioned above](#configuration), there is already an instance of the bot th
 [ISC](https://choosealicense.com/licenses/isc/)
 
 [^1]: The ACF Production Server Template was created in 2024 by Ani Perumalla for the production of 2025 ACF Regionals.
+
+[^2]: The packet name length is restricted to at most 2 characters.

@@ -4,6 +4,7 @@ import { client } from "src/bot";
 import { getEmojiList } from "src/utils/emojis";
 
 type userReact = {
+    users: number[],
     emoji: string;
     count: number;
 }
@@ -11,14 +12,18 @@ type userReact = {
 export default async function handleTally(serverId: string, packetName: string, message: Message) {
     let packetBulkQuestions = getBulkQuestionsInPacket(serverId, packetName);
     if (packetBulkQuestions.length > 0) {
-        packetBulkQuestions.forEach(async function (bulkQuestion: BulkQuestion) {
+        let tallyReply = await message.reply(`Tallying reacts for ${packetBulkQuestions.length} questions in packet ${packetName} ...`);
+        let talliedQuestions = 0;
+        for await (const bulkQuestion of packetBulkQuestions) {
             let echoChannelId = getServerChannels(serverId).find(c => (c.channel_type === 3))?.channel_id;
             if (echoChannelId) {
                 let echoChannel = client.channels.cache.get(echoChannelId) as TextChannel;
                 let echoMessage = await echoChannel.messages.fetch(bulkQuestion.echo_id);
 
                 let questionChannel = client.channels.cache.get(bulkQuestion.channel_id) as TextChannel;
+                questionChannel.messages.cache.delete(bulkQuestion.question_id);
                 let questionMessage = await questionChannel.messages.fetch(bulkQuestion.question_id);
+
                 if (echoMessage && questionMessage) {
                     let reacts: string[] = [];
                     if (bulkQuestion.question_type === "B") {
@@ -35,18 +40,20 @@ export default async function handleTally(serverId: string, packetName: string, 
                         ];
                     }
                     let react_emoji = await getEmojiList(reacts);
-                    let reactUsers: Number[] = [];
+
                     let reactCounts: userReact[] = [];
-                    questionMessage.reactions.cache?.filter(react => react_emoji.includes(react.emoji.toString()) && react.count).forEach(async react => {
-                        let thisReactUsers = react.users.cache.map(u => Number(u.id));
-                        if (thisReactUsers) {
-                            reactUsers = [...reactUsers, ...thisReactUsers];
+                    for await (const [_, react] of questionMessage.reactions.cache?.filter(react => react_emoji.includes(react.emoji.toString()) && react.count)) {
+                        let thisReactUserCollection = await react.users.fetch();
+                        let reactUsers = thisReactUserCollection.map(u => Number(u.id));
+                        if (reactUsers) {
                             reactCounts.push({
+                                users: reactUsers,
                                 emoji: react.emoji.toString(),
                                 count: react.count - 1
                             });
                         }
-                    });
+                    }
+
                     if (reactCounts.some(userReact => userReact.count > 0)) {
                         let answer_emoji = await getEmojiList(["answer"]);
                         let newEcho = "### [" +
@@ -58,7 +65,7 @@ export default async function handleTally(serverId: string, packetName: string, 
                         `||${bulkQuestion.answers}||`;
 
                         let play_count_emoji = await getEmojiList(["play_count"]);
-                        let reactedUsers = [... new Set(reactUsers)].filter(u => u != Number(client.user?.id));
+                        let reactedUsers = [... new Set(reactCounts.map(userReact => [...userReact.users]).flat().filter(u => u != Number(client.user?.id)))];
                         let playCount = reactedUsers.length > 0 ? reactedUsers.length : 1;
                         newEcho += `\n* **${playCount}** × ${play_count_emoji} \t`;
                         newEcho += reactCounts.map(userReact =>
@@ -69,10 +76,11 @@ export default async function handleTally(serverId: string, packetName: string, 
                     }
                 }
             }
-
-        });
-        message.reply(`Tallied reacts for ${packetBulkQuestions.length} questions in packet ${packetName}.`)
+            talliedQuestions++;
+            await tallyReply.edit(`Tallied reacts for ${talliedQuestions} of ${packetBulkQuestions.length} questions in packet ${packetName}.`);
+        }
+        await tallyReply.edit(`Tallied reacts for ${packetBulkQuestions.length} questions in packet ${packetName}.`);
     } else {
-        message.reply(`No questions in packet ${packetName} yet.`);
+        await message.reply(`No questions in packet ${packetName} yet.`);
     }
 }
