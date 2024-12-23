@@ -49,13 +49,13 @@ Once added to the server, follow the instructions below to configure the bot:
 To set up a question for playtesting through the bot, add spoiler marks as per the examples below for [tossups](#tossup-formatting) and [bonuses](#bonus-formatting) and paste the content in the desired channel.
 
 > [!TIP]
-> Add `!t` somewhere in the question message if you want the bot to auto-create a discussion thread (this is recommended).
+> Add `!t` somewhere in the question message if you want the bot to auto-create a discussion thread (this is recommended). If triggered via this command, the bot will automatically parse the category and add users with the corresponding role to the thread.
 
 > [!TIP]
 > It is strongly recommended that users of Google Docs use the [Paster Dingus](https://minkowski.space/quizbowl/paster/). This tool converts the content of a Google Docs question to the spoiler-tagged Discord Markdown version expected by the bot. Copy the question from Google Docs and paste into the tool's left panel; the formatted version will appear on the right panel. Tick the checkbox to add spoiler marks and the auto-thread command.
 
 > [!NOTE]
-> Messages should only contain one question; if you're playtesting a batch of questions, please send them one by one.
+> Messages should only contain one question; if you're playtesting a batch of questions, send them one by one.
 
 ##### Tossup Formatting
 
@@ -78,21 +78,20 @@ ANSWER: ||\_\_\*\*kill\*\*\_\_ing a \_\_\*\*deer\*\*\_\_ [accept any synonyms in
 !t</code>
 
 > [!TIP]
- > The formatting style seen above is the default output style used by the [Paster Dingus](https://minkowski.space/quizbowl/paster/). An alternative style is to add the difficulty marks inside each `[10]` tag in the form `10||h||`.
+> The formatting style seen above is the default output style used by the [Paster Dingus](https://minkowski.space/quizbowl/paster/). An alternative style is to add the difficulty marks inside each `[10]` tag in the form `10||h||`.
 
 #### Asynchronous Playtesting
 
 To play [an asynchronous question that has been detected by the bot](./examples/async-question.png):
 
 * Click the `Play Tossup` or `Play Bonus` button in the bot's reply to the question.
-* Look for a DM from the bot. Use the keyboard commands described by the bot to interact with the question.
-* When you're done, your result will be shared in [a thread in the designated playtesting results channel](./examples/async-results.png).
+* Look for a DM from the bot. Use the keyboard commands provided by the bot to interact with the question.
+* When you're done, your results will be shared in [a thread in the designated playtesting results channel](./examples/async-results.png).
 
 #### Bulk Playtesting
 
 * To begin reading a packet (e.g. `Packet A`), send the message `!read A` or `!packet A` or `!round A`. [^2]
-* [For each question in the packet to be playtested](./examples/bulk.png):
-  * Paste the spoiler-tagged question in any of the bulk playtesting channels. Just like in asynchronous playtesting, adding `!t` to the question content will auto-create a discussion thread.
+* [For each question in the packet to be playtested](./examples/bulk.png), paste the spoiler-tagged question in any of the bulk playtesting channels. Just like in asynchronous playtesting, adding `!t` to the question content will auto-create a discussion thread.
   * The bot will auto-react to the question message with a set of reacts depending on if it's a tossup or bonus:
     * Tossups
       * 15 points - `:tossup_15:` (if the tossup is powermarked with `(*)`)
@@ -106,6 +105,7 @@ To play [an asynchronous question that has been detected by the bot](./examples/
       * 0 points - `:bonus_0:`
       * Note that the bot will auto-order the bonus reacts based on the order of the bonus difficulties.
   * If configured, [the bot will send a link to the question in the echo channel](./examples/echo.png).
+  * The bot will automatically parse the category and add users with the corresponding role to the thread.
 * At any time, send the message `!packet` or `!round` to print the current packet name.
 * At any time, send the message `!tally` or `!count` to automatically tally the reacts to each question in the current packet and publish the counts to the echo channel.
   * To tally reacts for any specific packet (e.g. `Packet A`), send the message `!tally A` or `!count A`.
@@ -134,7 +134,7 @@ As [mentioned above](#configuration), there is already an instance of the bot th
   ```
 
 * Go to the `Bot` panel and check the boxes for `Presence Intent`, `Server Members Intent`, and `Message Content Intent`. These are required for the bot to receive information about messages and members of each server.
-* If you want to use the bot for bulk playtesting, you must go to the `Emojis` panel and upload all of the emojis in the [`react_emojis` zip file](./react_emojis.zip) to your bot.
+* Go to the `Emojis` panel and upload all of the emojis in the [`react_emojis` zip file](./react_emojis.zip) to your bot.
 
 ### Running Your Bot
 

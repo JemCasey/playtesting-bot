@@ -136,8 +136,9 @@ export default async function handleNewQuestion(message: Message<boolean>) {
                     let thisServerSetting = getServerSettings(message.guild!.id).find(ss => ss.server_id == message.guild!.id);
                     let answer_emoji = await getEmojiList(["answer"]);
                         questionEcho = "### [" +
-                        (!!bonusMatch ? "Bonus" : "Tossup") +
-                        (isNumeric(questionNumber) ? (" " + questionNumber) : "") + " - " +
+                        (!!bonusMatch ? "Bonus " : "Tossup ") +
+                        (thisServerSetting?.packet_name ? thisServerSetting?.packet_name + "." : "") +
+                        (isNumeric(questionNumber) ? questionNumber : "") + " - " +
                         getCategoryName(threadMetadata) +
                         "](" + message.url + ")" + "\n" +
                         "* " + ((answer_emoji[0] + " ") || "") +

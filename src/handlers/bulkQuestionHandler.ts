@@ -1,5 +1,5 @@
 import { Message, TextChannel } from "discord.js";
-import { getServerChannels, getBulkQuestionsInPacket, BulkQuestion, formatPercent } from "src/utils";
+import { getServerChannels, getBulkQuestionsInPacket, BulkQuestion, formatPercent, getServerSettings } from "src/utils";
 import { client } from "src/bot";
 import { getEmojiList } from "src/utils/emojis";
 
@@ -12,6 +12,7 @@ type userReact = {
 export default async function handleTally(serverId: string, packetName: string, message: Message) {
     let packetBulkQuestions = getBulkQuestionsInPacket(serverId, packetName);
     if (packetBulkQuestions.length > 0) {
+        let thisServerSetting = getServerSettings(serverId).find(ss => ss.server_id == serverId);
         let tallyReply = await message.reply(`Tallying reacts for ${packetBulkQuestions.length} questions in packet ${packetName} ...`);
         let talliedQuestions = 0;
         for await (const bulkQuestion of packetBulkQuestions) {
@@ -57,8 +58,9 @@ export default async function handleTally(serverId: string, packetName: string, 
                     if (reactCounts.some(userReact => userReact.count > 0)) {
                         let answer_emoji = await getEmojiList(["answer"]);
                         let newEcho = "### [" +
-                        (bulkQuestion.question_type === "B" ? "Bonus" : "Tossup") +
-                        (bulkQuestion.question_number ? (" " + bulkQuestion.question_number) : "") + " - " +
+                        (bulkQuestion.question_type === "B" ? "Bonus " : "Tossup ") +
+                        (thisServerSetting?.packet_name ? thisServerSetting?.packet_name + "." : "") +
+                        (bulkQuestion.question_number ? bulkQuestion.question_number : "") + " - " +
                         bulkQuestion.category +
                         "](" + questionMessage.url + ")" + "\n" +
                         "* " + ((answer_emoji[0] + " ") || "") +
