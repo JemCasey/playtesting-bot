@@ -25,7 +25,7 @@ Use [this invite link](https://discord.com/api/oauth2/authorize?client_id=112843
 > Botticelli is **in alpha and 24/7 availability is not guaranteed**. If this is a concern for your project, you can follow the steps under [Instruction for Developers](#instructions-for-developers) to set up your own instance.
 
 > [!TIP]
-> It is strongly recommended that you use the [ACF Production Server Template](https://discord.new/ps5S8Bsxwfra)[^1] for your production/playtesting server. The bot has been extensively tested in that framework, and using it will save you the significant amount of time necessary to set up all the necessary roles, permissions, and channels.
+> It is strongly recommended that you use the [ACF Production Server Template](https://discord.new/ps5S8Bsxwfra) [^1] for your production/playtesting server. The bot has been extensively tested in that framework, and using it will save you the significant amount of time necessary to set up all the necessary roles, permissions, and channels.
 
 Once added to the server, follow the instructions below to configure the bot:
 
@@ -167,10 +167,10 @@ As [mentioned above](#configuration), there is already an instance of the bot th
 
 ### Using Your Bot
 
-* The invite URL for your bot is of the format below:
+* The invite URL for your bot is of the format below [^3]:
 
-  ```http
-  https://discord.com/api/oauth2/authorize?client_id=[Bot Application ID]&permissions=67584&scope=bot
+  ```none
+  https://discord.com/api/oauth2/authorize?client_id=[Bot Application ID]&permissions=9122779245632&scope=bot
   ```
 
 * Any admin of your playtesting server can invite the bot to the server using the above link.
@@ -183,3 +183,5 @@ As [mentioned above](#configuration), there is already an instance of the bot th
 [^1]: The ACF Production Server Template was created in 2024 by Ani Perumalla for the production of 2025 ACF Regionals.
 
 [^2]: The packet name length is restricted to at most 2 characters.
+
+[^3]: The permissions integer `9122779245632` in the URL is based on the permissions that the bot should need to run properly. If you encounter any problems, try re-adding the bot to the server using the same URL but with the integer replaced with `8` (the administrator integer).
