@@ -118,7 +118,7 @@ As [mentioned above](#configuration), there is already an instance of the bot th
 
 ### Prerequisites
 
-* [Node](https://nodejs.org/en/download)
+* [Node v. 23+](https://nodejs.org/en/download)
 * Clone this repository.
 
 ### Creating Your Bot
