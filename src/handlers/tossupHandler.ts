@@ -55,7 +55,11 @@ export default async function handleTossupPlaytest(message: Message<boolean>, cl
         let value = 0;
         if (message.content.toLowerCase().startsWith('y')) {
             if (userProgress.questionParts.some(part => part.includes("\(\*\)"))) {
-                value = 15;
+                if (buzzIndex < userProgress.questionParts.findIndex(part => part.includes("\(\*\)"))) {
+                    value = 15;
+                } else {
+                    value = 10;
+                }
             } else {
                 value = 10;
             }
@@ -77,18 +81,14 @@ export default async function handleTossupPlaytest(message: Message<boolean>, cl
         if (message.content.toLowerCase().startsWith('e')) {
             points_emoji_name = "tossup_DNC";
         } else {
-            if (value > 0) {
-                if (value === 15) {
-                    points_emoji_name = "tossup_15";
-                } else if (value === 10) {
-                    points_emoji_name = "tossup_10";
-                }
+            if (value === 15) {
+                points_emoji_name = "tossup_15";
+            } else if (value === 10) {
+                points_emoji_name = "tossup_10";
+            } else if (value === 0) {
+                points_emoji_name = "tossup_DNC";
             } else {
-                if (value === 0) {
-                    points_emoji_name = "tossup_DNC";
-                } else {
-                    points_emoji_name = "tossup_neg5";
-                }
+                points_emoji_name = "tossup_neg5";
             }
         }
         let points_emoji = await getEmojiList([points_emoji_name]);
