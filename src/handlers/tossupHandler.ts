@@ -5,10 +5,10 @@ import { UserTossupProgress, getEmbeddedMessage, getServerChannels, getSilentMes
 import { getEmojiList } from "src/utils/emojis";
 
 export default async function handleTossupPlaytest(message: Message<boolean>, client: Client<boolean>, userProgress: UserTossupProgress, setUserProgress: (key: string, value: UserTossupProgress) => void, deleteUserProgress: (key: any) => void) {
-    if (message.content.toLowerCase().startsWith('x')) {
+    if (message.content.toLowerCase().startsWith("x")) {
         deleteUserProgress(message.author.id);
         await message.author.send(getEmbeddedMessage("Ended tossup reading.", true));
-    } else if ((!userProgress.buzzed && !userProgress.grade && message.content.toLowerCase().startsWith('n')) || (userProgress.buzzed && message.content.toLowerCase().startsWith('w'))) {
+    } else if ((!userProgress.buzzed && !userProgress.grade && message.content.toLowerCase().startsWith("n")) || (userProgress.buzzed && message.content.toLowerCase().startsWith("w"))) {
         const index = userProgress.index + 1;
         const guess = message.content.match(/\((.+)\)/);
 
@@ -23,10 +23,12 @@ export default async function handleTossupPlaytest(message: Message<boolean>, cl
             index
         });
 
-        if (userProgress.questionParts.length > index)
+        if (userProgress.questionParts.length > index) {
             await message.author.send(getSilentMessage(userProgress.questionParts[index]));
-        if (userProgress.questionParts.length - 1 <= index)
+        }
+        if (userProgress.questionParts.length - 1 <= index) {
             await message.author.send(getEmbeddedMessage("You've reached the end of the question. Please buzz by typing `b`/`buzz` or end by typing `e`/`end`.", true));
+        }
     } else if (message.content.toLowerCase().startsWith("b")) {
         setUserProgress(message.author.id, {
             ...userProgress,
@@ -42,8 +44,8 @@ export default async function handleTossupPlaytest(message: Message<boolean>, cl
 
         await message.author.send(getSilentMessage(`ANSWER: ${removeSpoilers(userProgress.answer)}`));
         await message.author.send(getEmbeddedMessage("Were you correct? Type `y`/`yes` or `n`/`no`. To indicate your answer, you can put it in parentheses at the end of your message - e.g. `y (foo)`.", true));
-    } else if (message.content.toLowerCase().startsWith('e') || ((message.content.toLowerCase().startsWith('y') || message.content.toLowerCase().startsWith('n')) && userProgress.grade)) {
-        if (message.content.toLowerCase().startsWith('e')) {
+    } else if (message.content.toLowerCase().startsWith("e") || ((message.content.toLowerCase().startsWith("y") || message.content.toLowerCase().startsWith("n")) && userProgress.grade)) {
+        if (message.content.toLowerCase().startsWith("e")) {
             userProgress.index = userProgress.questionParts.length - 1;
         }
 
@@ -53,7 +55,7 @@ export default async function handleTossupPlaytest(message: Message<boolean>, cl
         let resultMessage = "";
         let buzzIndex = userProgress.index >= userProgress.questionParts.length ? userProgress.questionParts.length - 1 : userProgress.index;
         let value = 0;
-        if (message.content.toLowerCase().startsWith('y')) {
+        if (message.content.toLowerCase().startsWith("y")) {
             if (userProgress.questionParts.some(part => part.includes("\(\*\)"))) {
                 if (buzzIndex < userProgress.questionParts.findIndex(part => part.includes("\(\*\)"))) {
                     value = 15;
@@ -70,15 +72,15 @@ export default async function handleTossupPlaytest(message: Message<boolean>, cl
                 value = -5;
             }
         }
-        let sanitizedNote = note ? note[1].replaceAll('||', '') : null;
+        let sanitizedNote = note ? note[1].replaceAll("||", "") : null;
         let countIndex = buzzIndex;
         let charactersRevealed = userProgress.questionParts[buzzIndex].length;
 
-        if (message.content.toLowerCase().startsWith('e'))
+        if (message.content.toLowerCase().startsWith("e"))
             await message.author.send(getSilentMessage(`ANSWER: ${removeSpoilers(userProgress.answer)}`));
 
         var points_emoji_name = "";
-        if (message.content.toLowerCase().startsWith('e')) {
+        if (message.content.toLowerCase().startsWith("e")) {
             points_emoji_name = "tossup_DNC";
         } else {
             if (value === 15) {
@@ -97,10 +99,10 @@ export default async function handleTossupPlaytest(message: Message<boolean>, cl
             resultMessage += `${points_emoji} `;
         }
         resultMessage += `<@${message.author.id}>`;
-        if (!message.content.toLowerCase().startsWith('e')) {
-            resultMessage += ` @ "||${userProgress.questionParts[buzzIndex]}||"${note ? `; answer: "||${sanitizedNote}||"` : ''}`;
-            resultMessage += (userProgress.guesses?.length > 0 ? ` — thinking \"${userProgress.guesses.map(g => `||${g.guess}|| @ clue #${g.index + 1}`).join(', ')}\"` : '');
+        if (!message.content.toLowerCase().startsWith("e")) {
+            resultMessage += ` @ "||${userProgress.questionParts[buzzIndex]}||"${note ? `; answer: "||${sanitizedNote}||"` : ""}`;
         }
+        resultMessage += userProgress.guesses?.length > 0 ? ` — thinking \"${userProgress.guesses.map(g => `||${g.guess}|| @ clue #${g.index + 1}`).join(", ")}\"` : "";
 
         while (countIndex-- > 0)
             charactersRevealed += userProgress.questionParts[countIndex].length;
