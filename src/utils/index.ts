@@ -387,7 +387,7 @@ export async function getTossupSummary(questionId: string, questionParts: string
     groupedBuzzes.forEach(async function (buzzpoint) {
         let cumulativeCharacters = questionParts.slice(0, buzzpoint.index + 1).join("").length;
         let point_value_msgs: string[] = [];
-        let lineSummary = `${formatPercent(cumulativeCharacters / totalCharacters)} (||${questionParts[buzzpoint.index].substring(0, 30)}||)   `;
+        let lineSummary = `* ${formatPercent(cumulativeCharacters / totalCharacters)} (||${questionParts[buzzpoint.index].substring(0, 30)}||)   `;
 
         point_values.forEach(async function (point_value: number, i) {
             let point_value_count = buzzpoint.buzzes?.filter(b => b.value == point_value)?.length || 0;
@@ -400,8 +400,7 @@ export async function getTossupSummary(questionId: string, questionParts: string
         tossupSummary += lineSummary + "\n";
     });
 
-    tossupSummary +=
-        `\n**Plays**: ${buzzes.length}\t`;
+    tossupSummary += `**Plays**: ${buzzes.length}\t`;
     if (questionParts.some(part => part.includes("\(\*\)")) && powers) {
         tossupSummary +=
             `**Power Rate**: ${formatPercent(powers.length / buzzes.length)}\t`;
