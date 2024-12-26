@@ -9,11 +9,11 @@ This is a Discord bot that can be used to playtest ACF-style quizbowl questions.
   * Once a set reaches the stage at which packets are being assembled, packets can be playtested as a whole with a troupe of playtesters who are not on the editing team. This occurs in "bulk," with the troupe at once hearing all of the questions in a given packet being read over audio.
   * In this situation, playtesters give answers in a bulk playtesting channel. Playtesters use reactions to indicate their results for each question (e.g. "10"/"0" for tossups; "E"/"M"/"H" for bonuses). Each question can be discussed in an associated thread.
 
-The bot was created by Jordan Brownstein in 2023 for the production of 2024 Chicago Open. Jordan wrote the bulk of the code, and in 2024 Ani Perumalla added a few new features for the production of 2025 ACF Regionals. Ophir Lifshitz designed the bulk playtesting react emojis and provided suggestions and feedback on features.
+The bot was created by [Jordan Brownstein](https://github.com/JemCasey) in 2023 for the production of 2024 Chicago Open. Jordan wrote the bulk of the code, and in 2024 [Ani Perumalla](https://github.com/ani-per) added a few new features for the production of 2025 ACF Regionals. [Ophir Lifshitz](https://github.com/hftf) designed the bulk playtesting react emojis and provided suggestions and feedback on features.
 
 ## Instructions for Users
 
-These instructions have been split based on whether you are a manager for the bot or whether you are just an editor in the production server. Bot managers must configure the bot before it may be used by editors and playtesters.
+These instructions for users have been split based on whether you are a manager for the bot or whether you are just an editor or playtester in the production server. Bot managers must configure the bot before it may be used by editors and playtesters.
 
 ### Instructions for Bot Managers
 
@@ -37,10 +37,10 @@ Once added to the server, follow the instructions below to configure the bot:
   * Create channel(s) where the bot can access questions for bulk playtesting (e.g. `#playtesting`).
   * Create a channel where the bot can "echo" question metadata (e.g. `#questions`). This channel will serve as an index for anyone to easily find each question's discussion thread.
 * The above steps are already completed if you use the ACF Production Server Template.
-* Send `!config` in a channel to which the bot has access (e.g. `#bots`). **You must follow all necessary steps.**
+* Send `!config` in a channel to which the bot has access (e.g. `#bots`). **You must follow all necessary steps,** as per [this example image](./examples/config.jpg).
 
 > [!IMPORTANT]
-> If you would like sensitive data, such as question answers and playtester notes, to be encrypted in the bot's database, please add a role to your server called `secret` before playtesting any questions. **Once created, this role should not be deleted.** Some planned commands that access answer data will not be able to decrypt it if the role is removed or recreated.
+> If you would like sensitive data, such as question answers and playtester notes, to be encrypted in the bot's database, add a role to your server called `secret` before playtesting any questions. **Once created, this role should not be deleted.** Some planned commands that access answer data will not be able to decrypt it if the role is removed or recreated.
 
 ### Instructions for Editors
 
@@ -86,7 +86,7 @@ To play [an asynchronous question that has been detected by the bot](./examples/
 
 * Click the `Play Tossup` or `Play Bonus` button in the bot's reply to the question.
 * Look for a DM from the bot. Use the keyboard commands provided by the bot to interact with the question.
-* When you're done, your results will be shared in [a thread in the designated playtesting results channel](./examples/async-results.png).
+* When you're done, your results will be shared in a thread in the designated playtesting results channel, arranged based on whether the question is a [tossup](./examples/async-results-tossup.png) or [bonus](./examples/async-results-bonus.png).
 
 #### Bulk Playtesting
 
@@ -105,7 +105,13 @@ To play [an asynchronous question that has been detected by the bot](./examples/
       * 0 points - `:bonus_0:`
       * Note that the bot will auto-order the bonus reacts based on the order of the bonus difficulties.
   * If configured, [the bot will send a link to the question in the echo channel](./examples/echo.png).
-  * The bot will automatically parse the category and add users with the corresponding role to the thread.
+  * The bot will automatically parse the category and add users with the corresponding role to the thread. The recognized category roles are:
+    * `Literature`
+    * `History`
+    * `Science`
+    * `Arts`
+    * `RMPSS`
+    * `Other`
 * At any time, send the message `!packet` or `!round` to print the current packet name.
 * At any time, send the message `!tally` or `!count` to automatically tally the reacts to each question in the current packet and publish the counts to the echo channel.
   * To tally reacts for any specific packet (e.g. `Packet A`), send the message `!tally A` or `!count A`.
@@ -153,7 +159,7 @@ As [mentioned above](#configuration), there is already an instance of the bot th
   $ npm run dev
   ```
 
-  * If successful, the terminal screen will be cleared of content and will print `Logged in as [Your Bot's Discord Username]`.
+  * If successful, the terminal screen will be cleared of content and the message `Logged in as [Your Bot's Discord Username]` will be printed.
 
 > [!NOTE]
 > Note that in dev mode, the bot is capable of "hot-reload." If you edit the code, no need to restart the run for the changes to take effect; just saving is enough.
@@ -164,6 +170,8 @@ As [mentioned above](#configuration), there is already an instance of the bot th
   $ npm run build
   $ npm run start
   ```
+
+  * If successful, the message `Logged in as [Your Bot's Discord Username]` will be printed.
 
 ### Using Your Bot
 
