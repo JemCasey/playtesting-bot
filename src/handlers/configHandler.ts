@@ -20,11 +20,16 @@ export default async function handleConfig(message: Message<boolean>) {
 
         let async_channels = saveAsyncServerChannelsFromMessage(collected, message.guild!);
 
-        await msgChannel.send(`Successfully saved ${async_channels.join(", ")} as asynchronous playtesting channels.`);
-        await msgChannel.send(`**Note**: If you would like question answers and player notes to be encrypted in the bot's database, create a role called \`${SECRET_ROLE}\`.`);
+        if (async_channels.length > 0) {
+            await msgChannel.send(`Successfully saved ${async_channels.join(", ")} as asynchronous playtesting channels.`);
+
+            await msgChannel.send(`**Note**: If you would like question answers and player notes to be encrypted in the bot's database, create a role called \`${SECRET_ROLE}\`.`);
+        } else {
+            await msgChannel.send(`No asynchronous channels configured.`);
+        }
 
         await msgChannel.send("List the channels used for **bulk playtesting** - where playtesters will use react to indicate their performance.\nUse the form: `#testing-channel-1 #testing-channel-2`.");
-        await msgChannel.send("To bypass bulk playtesting channels, type `#`.\nMake sure to add _exactly one space_ between each channel.\nDo not repeat any channels from asynchronous playtesting.");
+        await msgChannel.send("To bypass bulk playtesting channels, type `#`.\nMake sure to add _exactly one space_ between each channel.\nAsynchronous playtesting channels cannot be bulk playtesting channels.");
 
         try {
             let filter = (m: Message<boolean>) => m.author.id === message.author.id
@@ -38,7 +43,7 @@ export default async function handleConfig(message: Message<boolean>) {
             if (bulk_channels.length > 0) {
                 await msgChannel.send(`Successfully saved ${bulk_channels.join(", ")} as bulk playtesting channels.`);
                 await msgChannel.send("It is strongly recommended to have the questions for bulk playtesting echoed into another channel for convenient perusal afterwards.\nList the echo channel in the form: `#echo-channel`.");
-                await msgChannel.send("To bypass the echo channel, type `#`.\nDo not repeat any channels from asynchronous or bulk playtesting.");
+                await msgChannel.send("To bypass the echo channel, type `#`.\nAsynchronous and bulk playtesting channels cannot be echo channels.");
 
                 try {
                     let filter = (m: Message<boolean>) => m.author.id === message.author.id
@@ -56,6 +61,8 @@ export default async function handleConfig(message: Message<boolean>) {
                     await msgChannel.send("An error occurred, please try again.");
                 }
 
+                await msgChannel.send("Configuration finished.");
+            } else {
                 await msgChannel.send("Configuration finished.");
             }
         } catch {
