@@ -74,8 +74,8 @@ export default async function handleNewQuestion(message: Message<boolean>) {
     const msgChannel = playtestingChannels.find(c => (c.channel_id === message.channel.id));
 
     if (msgChannel && (bonusMatch || tossupMatch)) {
-        let threadQuestionText = '';
-        let threadMetadata = '';
+        let threadQuestionText = "";
+        let threadMetadata = "";
         let difficulties = [
             { part: 1, answer: "", difficulty: "" },
             { part: 2, answer: "", difficulty: "" },

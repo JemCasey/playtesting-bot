@@ -3,7 +3,7 @@ import { BONUS_DIFFICULTY_REGEX, BONUS_REGEX, bulkCharLimit, TOSSUP_REGEX } from
 import { buildButtonMessage, QuestionType, UserBonusProgress, UserProgress, UserTossupProgress, getEmbeddedMessage, getTossupParts, getToFirstIndicator, removeBonusValue, removeSpoilers, getCategoryName, getCategoryRole, isNumeric, removeQuestionNumber, getQuestionNumber, addRoles, getServerSettings } from "src/utils";
 
 export default async function handleButtonClick(interaction: Interaction, userProgress: Map<string, UserProgress>, setUserProgress: (key: any, value: any) => void) {
-    if (interaction.isButton() && interaction.customId === 'play_question') {
+    if (interaction.isButton() && interaction.customId === "play_question") {
         const message = await interaction.message.channel.messages.fetch(interaction.message.id);
 
         if (message?.reference?.messageId) {
@@ -41,7 +41,7 @@ export default async function handleButtonClick(interaction: Interaction, userPr
                 } as UserBonusProgress);
 
                 await interaction.user.send(getEmbeddedMessage("Here's your bonus! Type `d`/`direct` to check your the answer to the current part, or `p`/`pass` if you don't have a guess. Type `x` to exit reading without sharing results."));
-                await interaction.user.send(removeSpoilers(leadin) + '\n' + removeSpoilers(removeBonusValue(part1)));
+                await interaction.user.send(removeSpoilers(leadin) + "\n" + removeSpoilers(removeBonusValue(part1)));
             } else if (tossupMatch) {
                 const [_, question, answer] = tossupMatch;
                 const questionParts = getTossupParts(question);
@@ -70,7 +70,7 @@ export default async function handleButtonClick(interaction: Interaction, userPr
                 }
             }
         }
-    } else if (interaction.isButton() && interaction.customId === 'bulk_thread') {
+    } else if (interaction.isButton() && interaction.customId === "bulk_thread") {
         const message = await interaction.message.channel.messages.fetch(interaction.message.id);
 
         let thisServerSetting = getServerSettings(message.guild!.id).find(ss => ss.server_id == message.guild!.id);

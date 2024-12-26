@@ -44,9 +44,9 @@ const other_names = ["other", "academic", "geography", "current", "events", "pop
 
 type nullableString = string | null | undefined;
 
-export const removeSpoilers = (text: string) => text?.replaceAll('||', '') || "";
-export const shortenAnswerline = (answerline: string) => removeSpoilers(answerline.replace(/ \[.+\]/, '').replace(/ \(.+\)/, '')).trim();
-export const removeBonusValue = (bonusPart: string) => bonusPart.replace(/\|{0,2}\[10\|{0,2}[emh]?\|{0,2}]\|{0,2} ?/, '');
+export const removeSpoilers = (text: string) => text?.replaceAll("||", "") || "";
+export const shortenAnswerline = (answerline: string) => removeSpoilers(answerline.replace(/ \[.+\]/, "").replace(/ \(.+\)/, "")).trim();
+export const removeBonusValue = (bonusPart: string) => bonusPart.replace(/\|{0,2}\[10\|{0,2}[emh]?\|{0,2}]\|{0,2} ?/, "");
 export const formatPercent = (value: number | null | undefined, minimumIntegerDigits: number | undefined = undefined, minimumFractionDigits: number = 0) => value == null || value == undefined ? "" : value.toLocaleString(undefined, { style: 'percent', minimumFractionDigits, minimumIntegerDigits });
 export const formatDecimal = (value: number | null | undefined, fractionDigits: number = 0) => value == null || value == undefined ? "" : value?.toFixed(fractionDigits);
 export const isNumeric = (value: string) => (/^-?\d+$/.test(value));

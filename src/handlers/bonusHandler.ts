@@ -46,7 +46,7 @@ export default async function handleBonusPlaytest(message: Message<boolean>, cli
         });
 
         if (userProgress.parts.length > index) {
-            await message.author.send(getSilentMessage(removeBonusValue(removeSpoilers(userProgress.parts[index] || ''))));
+            await message.author.send(getSilentMessage(removeBonusValue(removeSpoilers(userProgress.parts[index] || ""))));
         } else {
             const key = KeySingleton.getInstance().getKey(message);
             const resultChannel = getServerChannels(userProgress.serverId).find(s => (s.channel_id === userProgress.channelId && s.channel_type === 1));
@@ -57,7 +57,7 @@ export default async function handleBonusPlaytest(message: Message<boolean>, cli
 
             results.forEach(async function (r: any, i: number) {
                 let answer = shortenAnswerline(userProgress.answers[i]);
-                let partMessage = '';
+                let partMessage = "";
                 var points_emoji_name = "";
 
                 if (r.points > 0) {
@@ -74,7 +74,7 @@ export default async function handleBonusPlaytest(message: Message<boolean>, cli
                 points_emoji_name += userProgress.difficulties[i]?.toUpperCase()
 
                 points_emoji_names.push(points_emoji_name);
-                partMessage += (r.note ? ` (answer: "||${r.note}||")` : '');
+                partMessage += (r.note ? ` (answer: "||${r.note}||")` : "");
                 partMessages.push(partMessage);
                 saveBonusDirect(userProgress.serverId, userProgress.questionId, userProgress.authorId, message.author.id, i + 1, r.points, r.note, key);
             });
