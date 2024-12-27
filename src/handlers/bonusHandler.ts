@@ -14,6 +14,22 @@ export default async function handleBonusPlaytest(message: Message<boolean>, cli
         return;
     }
 
+    if (!userProgress.grade && message.content.toLowerCase().startsWith("u") && userProgress.index < userProgress.parts.length) {
+        if (userProgress.index > 0) {
+            const index = userProgress.index - 1;
+            setUserProgress(message.author.id, {
+                ...userProgress,
+                grade: false,
+                index,
+                results: userProgress.results.slice(0, -1)
+            });
+
+            await message.author.send(getSilentMessage(removeBonusValue(removeSpoilers(userProgress.parts[index] || ""))));
+        } else {
+            await message.author.send(getEmbeddedMessage("You can't go back; this was the first bonus part.", true));
+        }
+    }
+
     if (!userProgress.grade && (message.content.toLowerCase().startsWith("d") || message.content.toLowerCase().startsWith("p"))) {
         await message.author.send(getSilentMessage(`ANSWER: ${removeSpoilers(userProgress.answers![userProgress.index])}`));
     }
@@ -45,12 +61,12 @@ export default async function handleBonusPlaytest(message: Message<boolean>, cli
             results
         });
 
-        if (userProgress.parts.length > index) {
+        if (index < userProgress.parts.length) {
             await message.author.send(getSilentMessage(removeBonusValue(removeSpoilers(userProgress.parts[index] || ""))));
         } else {
             const key = KeySingleton.getInstance().getKey(message);
             const resultChannel = getServerChannels(userProgress.serverId).find(s => (s.channel_id === userProgress.channelId && s.channel_type === 1));
-            let resultMessage = ``;
+            let resultMessage = "";
             let points_emoji_names: string[] = [];
             let partMessages: string[] = [];
             let totalPoints = 0;
