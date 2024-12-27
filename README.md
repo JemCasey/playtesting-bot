@@ -130,7 +130,8 @@ As [mentioned above](#configuration), there is already an instance of the bot th
 ### Creating Your Bot
 
 * Visit the [Discord Developer Application Portal](https://discord.com/developers/applications) and create a bot by clicking the `New Application` button.
-* In the portal, take note of your bot's token and application ID by going to the `OAuth2` panel. The token is called the "Client Secret" and the application ID is called the "Client ID."
+* In the portal, take note of your bot's client secret and application ID ("Client ID") by going to the `OAuth2` panel.
+* Go to the `Bot` panel and take note of your bot's token. You may have to reset the token.
 * Create a file called `.env` in your local clone's root directory.
 * Add the token and application ID to `.env` in the following format:
 
