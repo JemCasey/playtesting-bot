@@ -51,6 +51,7 @@ export const formatPercent = (value: number | null | undefined, minimumIntegerDi
 export const formatDecimal = (value: number | null | undefined, fractionDigits: number = 0) => value == null || value == undefined ? "" : value?.toFixed(fractionDigits);
 export const isNumeric = (value: string) => (/^-?\d+$/.test(value));
 export const getQuestionNumber = (question: string) => (question.replaceAll("\\", "").match(/(^\d+)\.\s*/)?.shift()?.trim().replace("\.", "") || "");
+export const cleanThreadName = (threadName: string) => (threadName.replaceAll("For 10 points each:", "").replaceAll(", for 10 points each:", "").replaceAll(", for 10 points each.", "").replaceAll("For 10 points each,", "").replaceAll(/\s\s+/g, " ").trim())
 
 export const getCategoryName = (metadata: string | undefined) => {
     let category = "";
@@ -64,6 +65,20 @@ export const getCategoryName = (metadata: string | undefined) => {
     }
 
     return category;
+}
+
+export const getAuthorName = (metadata: string | undefined) => {
+    let author = "";
+    if (metadata) {
+        metadata = removeSpoilers(metadata);
+        let results = metadata.match(/(.*), (.*)/);
+
+        if (results) {
+            author = results[1].trim();
+        }
+    }
+
+    return author;
 }
 
 export const getCategoryRole = (category: string) => {
@@ -124,10 +139,11 @@ export type UserProgress = {
     buttonMessageId: string;
     questionId: string;
     questionUrl: string;
-    authorId: string;
-    authorName: string;
+    posterId: string;
+    posterName: string;
     index: number;
     grade?: boolean;
+    authorName?: string;
 }
 
 export type UserBonusProgress = UserProgress & {
@@ -196,24 +212,24 @@ export type BonusPart = {
     difficulty: nullableString;
 }
 
-export const saveTossup = (questionId: string, serverId: string, authorId: string, totalCharacters: number, category: string, answer: string, key: nullableString) => {
-    insertTossupCommand.run(questionId, serverId, authorId, totalCharacters, category, encrypt(answer, key));
+export const saveTossup = (questionId: string, serverId: string, posterId: string, totalCharacters: number, category: string, answer: string, key: nullableString) => {
+    insertTossupCommand.run(questionId, serverId, posterId, totalCharacters, category, encrypt(answer, key));
 }
 
-export const saveBonus = (questionId: string, serverId: string, authorId: string, category: string, parts: BonusPart[], key: nullableString) => {
-    insertBonusCommand.run(questionId, serverId, authorId, category);
+export const saveBonus = (questionId: string, serverId: string, posterId: string, category: string, parts: BonusPart[], key: nullableString) => {
+    insertBonusCommand.run(questionId, serverId, posterId, category);
 
     for (var { part, difficulty, answer } of parts) {
         insertBonusPartCommand.run(questionId, part, difficulty, encrypt(answer, key));
     }
 }
 
-export const saveBuzz = (serverId: string, questionId: string, authorId: string, userId: string, clue_index: number, characters_revealed: number, value: number, answerGiven: nullableString, key: nullableString) => {
-    insertBuzzCommand.run(serverId, questionId, authorId, userId, clue_index, characters_revealed, value, answerGiven ? encrypt(answerGiven, key) : null);
+export const saveBuzz = (serverId: string, questionId: string, posterId: string, userId: string, clue_index: number, characters_revealed: number, value: number, answerGiven: nullableString, key: nullableString) => {
+    insertBuzzCommand.run(serverId, questionId, posterId, userId, clue_index, characters_revealed, value, answerGiven ? encrypt(answerGiven, key) : null);
 }
 
-export const saveBonusDirect = (serverId: string, questionId: string, authorId: string, userId: string, part: number, value: number, answerGiven: nullableString, key: nullableString) => {
-    insertBonusDirectCommand.run(serverId, questionId, authorId, userId, part, value, answerGiven ? encrypt(answerGiven, key) : null);
+export const saveBonusDirect = (serverId: string, questionId: string, posterId: string, userId: string, part: number, value: number, answerGiven: nullableString, key: nullableString) => {
+    insertBonusDirectCommand.run(serverId, questionId, posterId, userId, part, value, answerGiven ? encrypt(answerGiven, key) : null);
 }
 
 export const saveAsyncServerChannelsFromMessage = (collected: Collection<string, Message<boolean>>, server: Guild) => {
@@ -281,13 +297,13 @@ export const getThreadAndUpdateSummary = async (userProgress: UserProgress, thre
 
     if (!threadId) {
         thread = await resultsChannel.threads.create({
-            name: threadName,
+            name: threadName.replaceAll(/\s\s+/g, " ").trim(),
             autoArchiveDuration: 60
         });
         updateThreadId(userProgress.questionId, userProgress.type, thread.id);
 
         try {
-            await thread.members.add(userProgress.authorId);
+            await thread.members.add(userProgress.posterId);
         } catch (error) {
             console.error(`Error adding member to thread: ${error}`);
         }
@@ -387,7 +403,7 @@ export async function getTossupSummary(questionId: string, questionParts: string
     groupedBuzzes.forEach(async function (buzzpoint) {
         let cumulativeCharacters = questionParts.slice(0, buzzpoint.index + 1).join("").length;
         let point_value_msgs: string[] = [];
-        let lineSummary = `* ${formatPercent(cumulativeCharacters / totalCharacters)} (||${questionParts[buzzpoint.index].substring(0, 30)}||)   `;
+        let lineSummary = `* ${formatPercent(cumulativeCharacters / totalCharacters)} (||${questionParts[buzzpoint.index].substring(0, 30)}||)\n`;
 
         point_values.forEach(async function (point_value: number, i) {
             let point_value_count = buzzpoint.buzzes?.filter(b => b.value == point_value)?.length || 0;
@@ -396,7 +412,7 @@ export async function getTossupSummary(questionId: string, questionParts: string
             }
         })
 
-        lineSummary += point_value_msgs.join("   ");
+        lineSummary += "\t* " + point_value_msgs.join("   ");
         tossupSummary += lineSummary + "\n";
     });
 
@@ -481,9 +497,9 @@ export const removeQuestionNumber = (question: string, get: boolean = false) => 
     }
 }
 
-export function getCategoryCount(authorId: string, serverId: string | undefined, category: string, isBonus: boolean): number {
+export function getCategoryCount(posterId: string, serverId: string | undefined, category: string, isBonus: boolean): number {
     if (isBonus)
-        return (getBonusCategoryCountQuery.get(authorId, serverId, category) as any).category_count as number;
+        return (getBonusCategoryCountQuery.get(posterId, serverId, category) as any).category_count as number;
     else
-        return (getTossupCategoryCountQuery.get(authorId, serverId, category) as any).category_count as number;
+        return (getTossupCategoryCountQuery.get(posterId, serverId, category) as any).category_count as number;
 }

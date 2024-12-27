@@ -1,7 +1,7 @@
 import { Client, Message, TextChannel } from "discord.js";
 import { asyncCharLimit } from "src/constants";
 import KeySingleton from "src/services/keySingleton";
-import { UserTossupProgress, getEmbeddedMessage, getServerChannels, getSilentMessage, getThreadAndUpdateSummary, getToFirstIndicator, removeQuestionNumber, removeSpoilers, saveBuzz, shortenAnswerline } from "src/utils";
+import { UserTossupProgress, cleanThreadName, getEmbeddedMessage, getServerChannels, getSilentMessage, getThreadAndUpdateSummary, getToFirstIndicator, removeQuestionNumber, removeSpoilers, saveBuzz, shortenAnswerline } from "src/utils";
 import { getEmojiList } from "src/utils/emojis";
 
 export default async function handleTossupPlaytest(message: Message<boolean>, client: Client<boolean>, userProgress: UserTossupProgress, setUserProgress: (key: string, value: UserTossupProgress) => void, deleteUserProgress: (key: any) => void) {
@@ -27,7 +27,24 @@ export default async function handleTossupPlaytest(message: Message<boolean>, cl
             await message.author.send(getSilentMessage(userProgress.questionParts[index]));
         }
         if (userProgress.questionParts.length - 1 <= index) {
-            await message.author.send(getEmbeddedMessage("You've reached the end of the question. Please buzz by typing `b`/`buzz` or end by typing `e`/`end`.", true));
+            await message.author.send(getEmbeddedMessage("You've reached the end of the question. Buzz by typing `b`/`buzz`, end by typing `e`/`end`, or go back by typing `u`/`undo`.", true));
+        }
+    } else if ((!userProgress.buzzed && !userProgress.grade && message.content.toLowerCase().startsWith("u"))) {
+        if (userProgress.index > 0) {
+            const index = userProgress.index - 1;
+            setUserProgress(message.author.id, {
+                ...userProgress,
+                buzzed: false,
+                grade: false,
+                guesses: userProgress.guesses.slice(0, -1),
+                index
+            });
+
+            if (userProgress.questionParts.length > index) {
+                await message.author.send(getSilentMessage(userProgress.questionParts[index]));
+            }
+        } else {
+            await message.author.send(getEmbeddedMessage("You can't go back; this was the first clue.", true));
         }
     } else if (message.content.toLowerCase().startsWith("b")) {
         setUserProgress(message.author.id, {
@@ -107,13 +124,13 @@ export default async function handleTossupPlaytest(message: Message<boolean>, cl
         while (countIndex-- > 0)
             charactersRevealed += userProgress.questionParts[countIndex].length;
 
-        saveBuzz(userProgress.serverId, userProgress.questionId, userProgress.authorId, message.author.id, buzzIndex, charactersRevealed, value, sanitizedNote, key);
+        saveBuzz(userProgress.serverId, userProgress.questionId, userProgress.posterId, message.author.id, buzzIndex, charactersRevealed, value, sanitizedNote, key);
 
-        const fallbackName = getToFirstIndicator(removeQuestionNumber(userProgress.questionParts[0]), asyncCharLimit);
-        const threadName = `T | ${userProgress?.authorName || ""} | ${fallbackName}`;
+        const fallbackName = cleanThreadName(getToFirstIndicator(removeQuestionNumber(userProgress.questionParts[0]), asyncCharLimit));
+        const threadName = `T | ${userProgress?.authorName || userProgress?.posterName || ""} | ${fallbackName}`;
         const resultsChannel = client.channels.cache.get(resultChannel!.result_channel_id) as TextChannel;
         const playtestingChannel = client.channels.cache.get(userProgress.channelId) as TextChannel;
-        const thread = await getThreadAndUpdateSummary(userProgress, threadName.slice(0, 100), resultsChannel, playtestingChannel);
+        const thread = await getThreadAndUpdateSummary(userProgress, threadName.replaceAll(/\s\s+/g, " ").trim().slice(0, 100), resultsChannel, playtestingChannel);
 
         await thread.send(resultMessage);
 
