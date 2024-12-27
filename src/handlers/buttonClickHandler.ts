@@ -1,6 +1,7 @@
-import { Interaction } from "discord.js";
-import { BONUS_DIFFICULTY_REGEX, BONUS_REGEX, bulkCharLimit, TOSSUP_REGEX } from "src/constants";
-import { buildButtonMessage, QuestionType, UserBonusProgress, UserProgress, UserTossupProgress, getEmbeddedMessage, getTossupParts, getToFirstIndicator, removeBonusValue, removeSpoilers, getCategoryName, getCategoryRole, isNumeric, removeQuestionNumber, getQuestionNumber, addRoles, getServerSettings, getAuthorName, cleanThreadName } from "src/utils";
+import { Interaction, TextChannel } from "discord.js";
+import { client } from "src/bot";
+import { asyncCharLimit, BONUS_DIFFICULTY_REGEX, BONUS_REGEX, bulkCharLimit, TOSSUP_REGEX } from "src/constants";
+import { buildButtonMessage, QuestionType, UserBonusProgress, UserProgress, UserTossupProgress, getEmbeddedMessage, getTossupParts, getToFirstIndicator, removeBonusValue, removeSpoilers, getCategoryName, getCategoryRole, isNumeric, removeQuestionNumber, getQuestionNumber, addRoles, getServerSettings, getAuthorName, cleanThreadName, getCategoryCount, getThreadId, getServerChannels } from "src/utils";
 
 export default async function handleButtonClick(interaction: Interaction, userProgress: Map<string, UserProgress>, setUserProgress: (key: any, value: any) => void) {
     if (interaction.isButton() && interaction.customId === "play_question") {
@@ -74,7 +75,7 @@ export default async function handleButtonClick(interaction: Interaction, userPr
                 }
             }
         }
-    } else if (interaction.isButton() && interaction.customId === "bulk_thread") {
+    } else if (interaction.isButton() && (interaction.customId === "async_thread" || interaction.customId === "bulk_thread")) {
         const message = await interaction.message.channel.messages.fetch(interaction.message.id);
 
         let thisServerSetting = getServerSettings(message.guild!.id).find(ss => ss.server_id == message.guild!.id);
@@ -92,29 +93,45 @@ export default async function handleButtonClick(interaction: Interaction, userPr
             if (bonusMatch) {
                 let [_, leadin, part1, answer1, part2, answer2, part3, answer3, metadata, difficultyPart1, difficultyPart2, difficultyPart3] = bonusMatch;
                 questionNumber = getQuestionNumber(leadin);
+                metadata = removeSpoilers(metadata);
 
                 if (metadata) {
                     categoryName = getCategoryName(metadata);
                     categoryRoleName = getCategoryRole(categoryName);
                 }
 
-                fallbackName = cleanThreadName(getToFirstIndicator(removeQuestionNumber(leadin), bulkCharLimit));
-                threadName = metadata ?
-                    `${thisServerSetting?.packet_name ? thisServerSetting?.packet_name + "." : ""}B${isNumeric(questionNumber) ? questionNumber: ""} | ${categoryName} | ${fallbackName}` :
-                    `B | ${getToFirstIndicator(fallbackName)}`;
+                if (interaction.customId === "async_thread") {
+                    fallbackName = cleanThreadName(getToFirstIndicator(removeQuestionNumber(leadin), asyncCharLimit));
+                    threadName = metadata ?
+                        `${metadata} | B${getCategoryCount(questionMessage.author.id, message.guild?.id, categoryName, true)}` :
+                        `B | ${fallbackName}`;
+                } else if (interaction.customId === "bulk_thread") {
+                    fallbackName = cleanThreadName(getToFirstIndicator(removeQuestionNumber(leadin), bulkCharLimit));
+                    threadName = metadata ?
+                        `${thisServerSetting?.packet_name ? thisServerSetting?.packet_name + "." : ""}B${isNumeric(questionNumber) ? questionNumber: ""} | ${categoryName} | ${fallbackName}` :
+                        `B | ${fallbackName}`;
+                }
             } else if (tossupMatch) {
                 let [_, question, answer, metadata] = tossupMatch;
                 questionNumber = getQuestionNumber(question);
+                metadata = removeSpoilers(metadata);
 
                 if (metadata) {
                     categoryName = getCategoryName(metadata);
                     categoryRoleName = getCategoryRole(categoryName);
                 }
 
-                fallbackName = cleanThreadName(getToFirstIndicator(removeQuestionNumber(question), bulkCharLimit));
-                threadName = metadata ?
-                    `${thisServerSetting?.packet_name ? thisServerSetting?.packet_name + "." : ""}T${isNumeric(questionNumber) ? questionNumber: ""} | ${categoryName} | ${fallbackName}` :
-                    `T | ${fallbackName}`;
+                if (interaction.customId === "async_thread") {
+                    fallbackName = cleanThreadName(getToFirstIndicator(removeQuestionNumber(question), asyncCharLimit));
+                    threadName = metadata ?
+                        `${metadata} | T${getCategoryCount(questionMessage.author.id, message.guild?.id, categoryName, false)}` :
+                        `T | ${fallbackName}`;
+                } else if (interaction.customId === "bulk_thread") {
+                    fallbackName = cleanThreadName(getToFirstIndicator(removeQuestionNumber(question), bulkCharLimit));
+                    threadName = metadata ?
+                        `${thisServerSetting?.packet_name ? thisServerSetting?.packet_name + "." : ""}T${isNumeric(questionNumber) ? questionNumber: ""} | ${categoryName} | ${fallbackName}` :
+                        `T | ${fallbackName}`;
+                }
             }
 
             const thread = await questionMessage.startThread({
@@ -123,7 +140,28 @@ export default async function handleButtonClick(interaction: Interaction, userPr
             });
 
             if (thread) {
-                message.edit(buildButtonMessage("bulk_thread", "Discussion Thread", thread.url));
+                if (interaction.customId === "async_thread") {
+                    const buttonLabel = "Play " + (!!bonusMatch ? "Bonus" : "Tossup");
+                    let resultsThreadId = getThreadId(questionMessage.id, !!bonusMatch ? QuestionType.Bonus : QuestionType.Tossup);
+                    if (resultsThreadId) {
+                        const resultChannel = getServerChannels(message.guild!.id).find(s => (s.channel_id === message.channelId && s.channel_type === 1));
+                        const resultsChannel = client.channels.cache.get(resultChannel!.result_channel_id) as TextChannel;
+                        const resultsMessage = await resultsChannel.messages.fetch(resultsThreadId);
+                        message.edit(buildButtonMessage([
+                            {label: buttonLabel, id: "play_question", url: ""},
+                            {label: "Results", id: "", url: resultsMessage.thread?.url || ""}
+                        ]));
+                    } else {
+                        message.edit(buildButtonMessage([
+                            {label: buttonLabel, id: "play_question", url: ""}
+                        ]));
+                    }
+                    await thread.members.add(message.author);
+                } else {
+                    message.edit(buildButtonMessage([
+                        {label: "Discussion Thread", id: "bulk_thread", url: thread.url}
+                    ]));
+                }
                 await addRoles(message, thread, "Head Editor", false);
                 await addRoles(message, thread, categoryRoleName, true);
             }

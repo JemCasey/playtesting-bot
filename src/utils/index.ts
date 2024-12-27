@@ -311,7 +311,19 @@ export const getThreadAndUpdateSummary = async (userProgress: UserProgress, thre
         const buttonMessage = await playtestingChannel.messages.fetch(userProgress.buttonMessageId);
         const buttonLabel = "Play " + (!!(userProgress.type === QuestionType.Bonus) ? "Bonus" : "Tossup");
         if (buttonMessage) {
-            buttonMessage.edit(buildButtonMessage("play_question", buttonLabel, "", "Results", thread.url));
+            const questionMessage = await playtestingChannel.messages.fetch(userProgress.questionId);
+            if (questionMessage.hasThread) {
+                buttonMessage.edit(buildButtonMessage([
+                    {label: buttonLabel, id: "play_question", url: ""},
+                    {label: "Results", id: "", url: thread.url}
+                ]));
+            } else {
+                buttonMessage.edit(buildButtonMessage([
+                    {label: "Create Discussion Thread", id: "async_thread", url: ""},
+                    {label: buttonLabel, id: "play_question", url: ""},
+                    {label: "Results", id: "", url: thread.url}
+                ]));
+            }
         }
 
         if (userProgress.type === QuestionType.Tossup) {
@@ -328,7 +340,6 @@ export const getThreadAndUpdateSummary = async (userProgress: UserProgress, thre
                 resultsMessage.edit(await getTossupSummary(userProgress.questionId, (userProgress as UserTossupProgress).questionParts, (userProgress as UserTossupProgress).answer, userProgress.questionUrl));
             else
                 resultsMessage.edit(await getBonusSummary(userProgress.questionId, userProgress.questionUrl));
-
         }
     }
 
@@ -446,30 +457,43 @@ export async function getBonusSummary(questionId: string, questionUrl: string) {
         `### [Return to Question](${questionUrl})`
 }
 
-export const buildButtonMessage = (buttonID: string = "play_question", primaryButtonLabel: string = "", primaryButtonURL: string = "", secondaryButtonLabel: string = "Results", secondaryButtonURL: string = ""): BaseMessageOptions => {
+export type ButtonDescriptor = {
+    label: string;
+    id: string;
+    url: string;
+}
 
+export const buildButtonMessage = (buttonDescriptors: ButtonDescriptor[]): BaseMessageOptions => {
     let buttons;
-    if (primaryButtonLabel && primaryButtonURL) {
+    let primaryButton = buttonDescriptors.shift();
+    if (primaryButton?.label && primaryButton.url) {
         buttons = new ActionRowBuilder().addComponents(new ButtonBuilder()
             .setStyle(ButtonStyle.Link)
-            .setLabel(primaryButtonLabel)
-            .setURL(primaryButtonURL)
+            .setLabel(primaryButton.label)
+            .setURL(primaryButton.url)
         );
     } else {
         buttons = new ActionRowBuilder().addComponents(new ButtonBuilder()
             .setStyle(ButtonStyle.Primary)
-            .setLabel(primaryButtonLabel)
-            .setCustomId(buttonID)
+            .setLabel(primaryButton?.label || "Error")
+            .setCustomId(primaryButton?.id || "Error")
         );
     }
-
-    if (secondaryButtonLabel && secondaryButtonURL) {
-        buttons.addComponents(new ButtonBuilder()
-            .setStyle(ButtonStyle.Link)
-            .setLabel(secondaryButtonLabel)
-            .setURL(secondaryButtonURL)
-        );
-    }
+    buttonDescriptors.forEach(buttonDescriptor => {
+        if (buttonDescriptor.label && buttonDescriptor.url) {
+            buttons.addComponents(new ButtonBuilder()
+                .setStyle(ButtonStyle.Link)
+                .setLabel(buttonDescriptor.label)
+                .setURL(buttonDescriptor.url)
+            );
+        } else {
+            buttons.addComponents(new ButtonBuilder()
+                .setStyle(ButtonStyle.Primary)
+                .setLabel(buttonDescriptor?.label || "Error")
+                .setCustomId(buttonDescriptor?.id || "Error")
+            );
+        }
+    });
 
     return { components: [buttons] } as BaseMessageOptions;
 }

@@ -17,11 +17,11 @@ async function handleThread(msgChannel: ServerChannel, message: Message, isBonus
     if (msgChannel.channel_type === 2) {
         threadName = metadata ?
             `${thisServerSetting?.packet_name ? thisServerSetting?.packet_name + "." : ""}${isBonus ? "B" : "T"}${questionNumber} | ${categoryName} | ${fallbackName}` :
-            `"${fallbackName}"`;
+            `${isBonus ? "B" : "T"} | ${fallbackName}`;
     } else if (msgChannel.channel_type === 1) {
         threadName = metadata ?
-            `${metadata} | ${isBonus ? "B" : "T"}${getCategoryCount(message.author.id, message.guild?.id, categoryName, isBonus)}`
-            : `"${fallbackName}"`;
+            `${metadata} | ${isBonus ? "B" : "T"}${getCategoryCount(message.author.id, message.guild?.id, categoryName, isBonus)}` :
+            `${isBonus ? "B" : "T"} | ${fallbackName}`;
     }
 
     const thread = await message.startThread({
@@ -147,17 +147,32 @@ export default async function handleNewQuestion(message: Message<boolean>) {
                     let echoMessage = await echoQuestion(questionEcho, echoChannelId);
                     if (echoMessage) {
                         saveBulkQuestion(message.guild!.id, message.id, msgChannel.channel_id, thisServerSetting?.packet_name || "", isNumeric(questionNumber) ? Number(questionNumber) : 0, (!!bonusMatch ? "B" : "T"), getCategoryName(threadMetadata), answersEcho, echoMessage.id);
-                        if (message.content.includes('!t')) {
-                            message.reply(buildButtonMessage("echo", "Return to List", echoMessage?.url));
+                        if (message.content.includes("!t")) {
+                            message.reply(buildButtonMessage([
+                                {label: "Return to List", id: "echo", url: echoMessage?.url || ""}
+                            ]));
                         } else {
-                            message.reply(buildButtonMessage("bulk_thread", "Create Discussion Thread", "", "Go to Index", echoMessage?.url));
+                            message.reply(buildButtonMessage([
+                                {label: "Create Discussion Thread", id: "bulk_thread", url: ""},
+                                {label: "Go to Index", id: "", url: echoMessage?.url || ""},
+                            ]));
                         };
                     }
                 }
             } else if (msgChannel.channel_type === 1) {
-                await message.reply(buildButtonMessage("play_question", "Play " + (!!bonusMatch ? "Bonus" : "Tossup")));
+                const buttonLabel = "Play " + (!!bonusMatch ? "Bonus" : "Tossup");
+                if (message.content.includes("!t")) {
+                    message.reply(buildButtonMessage([
+                        {label: buttonLabel, id: "play_question", url: ""},
+                    ]));
+                } else {
+                    message.reply(buildButtonMessage([
+                        {label: "Create Discussion Thread", id: "async_thread", url: ""},
+                        {label: buttonLabel, id: "play_question", url: ""},
+                    ]));
+                }
             }
-            if (message.content.includes('!t')) {
+            if (message.content.includes("!t")) {
                 await handleThread(msgChannel, message, !!bonusMatch, threadQuestionText, threadMetadata, isNumeric(questionNumber) ? questionNumber: "");
             }
         }
