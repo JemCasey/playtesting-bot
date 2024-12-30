@@ -56,14 +56,14 @@ export default async function handleTally(serverId: string, packetName: string, 
                     }
 
                     if (reactCounts.some(userReact => userReact.count > 0)) {
-                        let answer_emoji = await getEmojiList(["answer"]);
+                        let answer_emoji = (await getEmojiList(["answer"]))[0];
                         let newEcho = "### [" +
                         (bulkQuestion.question_type === "B" ? "Bonus " : "Tossup ") +
                         (thisServerSetting?.packet_name ? thisServerSetting?.packet_name + "." : "") +
                         (bulkQuestion.question_number ? bulkQuestion.question_number : "") + " - " +
                         bulkQuestion.category +
                         "](" + questionMessage.url + ")" + "\n" +
-                        "* " + ((answer_emoji[0] + " ") || "") +
+                        "* " + ((answer_emoji + " ") || "") +
                         `||${bulkQuestion.answers}||`;
 
                         let play_count_emoji = await getEmojiList(["play_count"]);

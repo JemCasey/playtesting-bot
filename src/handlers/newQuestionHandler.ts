@@ -134,16 +134,16 @@ export default async function handleNewQuestion(message: Message<boolean>) {
                 const echoChannelId = playtestingChannels.find(c => (c.channel_type === 3))?.channel_id;
                 if (echoChannelId) {
                     let thisServerSetting = getServerSettings(message.guild!.id).find(ss => ss.server_id == message.guild!.id);
-                    let answer_emoji = await getEmojiList(["answer"]);
-                        questionEcho = "### [" +
+                    let answer_emoji = (await getEmojiList(["answer"]))[0];
+                    questionEcho = "### [" +
                         (!!bonusMatch ? "Bonus " : "Tossup ") +
                         (thisServerSetting?.packet_name ? thisServerSetting?.packet_name + "." : "") +
                         (isNumeric(questionNumber) ? questionNumber : "") + " - " +
                         getCategoryName(threadMetadata) +
                         "](" + message.url + ")" + "\n" +
-                        "* " + ((answer_emoji[0] + " ") || "") +
+                        "* " + ((answer_emoji + " ") || "") +
                         "||" + answersEcho.join(" / ") + "||";
-                        // questionEcho += " - ||" + getToFirstIndicator(removeQuestionNumber(threadQuestionText), bulkCharLimit) + "||";
+                    // questionEcho += " - ||" + getToFirstIndicator(removeQuestionNumber(threadQuestionText), bulkCharLimit) + "||";
                     let echoMessage = await echoQuestion(questionEcho, echoChannelId);
                     if (echoMessage) {
                         saveBulkQuestion(message.guild!.id, message.id, msgChannel.channel_id, thisServerSetting?.packet_name || "", isNumeric(questionNumber) ? Number(questionNumber) : 0, (!!bonusMatch ? "B" : "T"), getCategoryName(threadMetadata), answersEcho, echoMessage.id);

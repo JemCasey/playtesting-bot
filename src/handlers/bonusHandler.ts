@@ -49,7 +49,7 @@ export default async function handleBonusPlaytest(message: Message<boolean>, cli
             grade: true
         });
 
-        await message.author.send(getEmbeddedMessage("Were you correct? Type `y`/`yes` or `n`/`no`. If you'd like to indicate your answer, you can put it in parenthesis at the end of your message, e.g. `y (foo)`", true));
+        await message.author.send(getEmbeddedMessage("Were you correct? Type `y`/`yes` or `n`/`no`. To indicate your answer, you can put it in parentheses at the end of your message - e.g. `y (foo)`. To undo your direct, type `u`/`undo`.", true));
     }
 
     if (validGradingResponse || (!userProgress.grade && message.content.toLowerCase().startsWith("p"))) {
@@ -79,6 +79,7 @@ export default async function handleBonusPlaytest(message: Message<boolean>, cli
             let points_emoji_names: string[] = [];
             let partMessages: string[] = [];
             let totalPoints = 0;
+            let answer_emoji = (await getEmojiList(["answer"]))[0] || "answer:";
 
             results.forEach(async function (r: any, i: number) {
                 let answer = shortenAnswerline(userProgress.answers[i]);
@@ -99,7 +100,7 @@ export default async function handleBonusPlaytest(message: Message<boolean>, cli
                 points_emoji_name += userProgress.difficulties[i]?.toUpperCase()
 
                 points_emoji_names.push(points_emoji_name);
-                partMessage += (r.note?.text ? ` (answer: "||${r.note.text}||")` : "");
+                partMessage += (r.note?.text ? ` (${answer_emoji} "||${r.note.text}||")` : "");
                 partMessages.push(partMessage);
                 saveBonusDirect(userProgress.serverId, userProgress.questionId, userProgress.posterId, message.author.id, i + 1, r.points, r.note?.text || null, key);
             });

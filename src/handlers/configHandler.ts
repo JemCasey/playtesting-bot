@@ -28,7 +28,7 @@ export default async function handleConfig(message: Message<boolean>) {
             await msgChannel.send(`No asynchronous channels configured.`);
         }
 
-        await msgChannel.send("List the channels used for **bulk playtesting** - where playtesters will use react to indicate their performance.\nUse the form: `#testing-channel-1 #testing-channel-2`.");
+        await msgChannel.send("List the channels used for **bulk playtesting** - where playtesters will use reacts to indicate their performance.\nUse the form: `#testing-channel-1 #testing-channel-2`.");
         await msgChannel.send("To bypass bulk playtesting channels, type `#`.\nMake sure to add _exactly one space_ between each channel.\nAsynchronous playtesting channels cannot be bulk playtesting channels.");
 
         try {

@@ -318,7 +318,7 @@ export const getThreadAndUpdateSummary = async (userProgress: UserProgress, thre
         const buttonLabel = "Play " + (!!(userProgress.type === QuestionType.Bonus) ? "Bonus" : "Tossup");
         if (buttonMessage) {
             const questionMessage = await playtestingChannel.messages.fetch(userProgress.questionId);
-            if (questionMessage.hasThread) {
+            if (questionMessage.hasThread || questionMessage.content.includes("!t")) {
                 buttonMessage.edit(buildButtonMessage([
                     {label: buttonLabel, id: "play_question", url: ""},
                     {label: "Results", id: "", url: thread.url}

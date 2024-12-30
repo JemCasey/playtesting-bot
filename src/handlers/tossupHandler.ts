@@ -117,9 +117,10 @@ export default async function handleTossupPlaytest(message: Message<boolean>, cl
         }
         resultMessage += `<@${message.author.id}>`;
         if (!message.content.toLowerCase().startsWith("e")) {
-            resultMessage += ` @ "||${userProgress.questionParts[buzzIndex]}||"${note ? `; answer: "||${sanitizedNote}||"` : ""}`;
+            let answer_emoji = (await getEmojiList(["answer"]))[0] || "answer:";
+            resultMessage += ` @ "||${userProgress.questionParts[buzzIndex]}||"${note ? ` — ${answer_emoji} "||${sanitizedNote}||"` : ""}`;
         }
-        resultMessage += userProgress.guesses?.length > 0 ? ` — thinking ${userProgress.guesses.map(g => `||${g.guess}|| @ clue #${g.index + 1}`).join(", ")}` : "";
+        resultMessage += userProgress.guesses?.length > 0 ? ` — thinking ${userProgress.guesses.map(g => `"||${g.guess}||" @ clue #${g.index + 1}`).join(", ")}` : "";
 
         while (countIndex-- > 0)
             charactersRevealed += userProgress.questionParts[countIndex].length;
