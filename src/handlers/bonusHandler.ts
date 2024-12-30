@@ -1,7 +1,7 @@
 import { Client, Message, TextChannel } from "discord.js";
 import { asyncCharLimit } from "src/constants";
 import KeySingleton from "src/services/keySingleton";
-import { UserBonusProgress, getEmbeddedMessage, getServerChannels, getSilentMessage, getThreadAndUpdateSummary, getToFirstIndicator, removeQuestionNumber, removeBonusValue, removeSpoilers, saveBonusDirect, shortenAnswerline, cleanThreadName } from "src/utils";
+import { UserBonusProgress, getEmbeddedMessage, getServerChannels, getSilentMessage, getThreadAndUpdateSummary, getToFirstIndicator, removeQuestionNumber, removeBonusValue, removeSpoilers, saveBonusDirect, shortenAnswerline, cleanThreadName, stripFormatting } from "src/utils";
 import { getEmojiList } from "src/utils/emojis";
 
 export default async function handleBonusPlaytest(message: Message<boolean>, client: Client<boolean>, userProgress: UserBonusProgress, setUserProgress: (key: any, value: any) => void, deleteUserProgress: (key: any) => void) {
@@ -14,17 +14,26 @@ export default async function handleBonusPlaytest(message: Message<boolean>, cli
         return;
     }
 
-    if (!userProgress.grade && message.content.toLowerCase().startsWith("u") && userProgress.index < userProgress.parts.length) {
-        if (userProgress.index > 0) {
-            const index = userProgress.index - 1;
+    if (message.content.toLowerCase().startsWith("u") && userProgress.index < userProgress.parts.length) {
+        let index: number;
+        if (userProgress.grade) {
+            index = userProgress.index;
+        } else {
+            index = userProgress.index - 1;
+        }
+        if (userProgress.grade || userProgress.index > 0) {
             setUserProgress(message.author.id, {
                 ...userProgress,
                 grade: false,
                 index,
-                results: userProgress.results.slice(0, -1)
+                results: userProgress.results.filter(n => n.note.index !== index)
             });
 
-            await message.author.send(getSilentMessage(removeBonusValue(removeSpoilers(userProgress.parts[index] || ""))));
+            let partToShow = removeBonusValue(removeSpoilers(userProgress.parts[index] || ""));
+            if (index === 0) {
+                partToShow = removeBonusValue(removeSpoilers(userProgress.leadin || "")) + "\n" + partToShow;
+            }
+            await message.author.send(getSilentMessage(partToShow));
         } else {
             await message.author.send(getEmbeddedMessage("You can't go back; this was the first bonus part.", true));
         }
@@ -44,15 +53,15 @@ export default async function handleBonusPlaytest(message: Message<boolean>, cli
     }
 
     if (validGradingResponse || (!userProgress.grade && message.content.toLowerCase().startsWith("p"))) {
+        const index = userProgress.index + 1;
         const note = message.content.match(/\((.+)\)/);
         const results = [
             ...userProgress.results, {
                 points: message.content.toLowerCase().startsWith("y") ? 10 : 0,
                 passed: message.content.toLowerCase().startsWith("p"),
-                note: note ? note[1] : null
+                note: note ? {text: note[1], index: userProgress.index} : {text: null, index: userProgress.index}
             }
         ];
-        const index = userProgress.index + 1;
 
         setUserProgress(message.author.id, {
             ...userProgress,
@@ -90,9 +99,9 @@ export default async function handleBonusPlaytest(message: Message<boolean>, cli
                 points_emoji_name += userProgress.difficulties[i]?.toUpperCase()
 
                 points_emoji_names.push(points_emoji_name);
-                partMessage += (r.note ? ` (answer: "||${r.note}||")` : "");
+                partMessage += (r.note?.text ? ` (answer: "||${r.note.text}||")` : "");
                 partMessages.push(partMessage);
-                saveBonusDirect(userProgress.serverId, userProgress.questionId, userProgress.posterId, message.author.id, i + 1, r.points, r.note, key);
+                saveBonusDirect(userProgress.serverId, userProgress.questionId, userProgress.posterId, message.author.id, i + 1, r.points, r.note?.text || null, key);
             });
 
             let emoji_summary = await getEmojiList(points_emoji_names);
@@ -101,7 +110,7 @@ export default async function handleBonusPlaytest(message: Message<boolean>, cli
             resultMessage += ` ${totalPoints} <@${message.author.id}> `;
             resultMessage += partMessages.join(", ");
 
-            const fallbackName = cleanThreadName(getToFirstIndicator(removeQuestionNumber(userProgress.leadin), asyncCharLimit));
+            const fallbackName = cleanThreadName(getToFirstIndicator(stripFormatting(removeQuestionNumber(userProgress.leadin)), asyncCharLimit));
             const threadName = `B | ${userProgress?.authorName || userProgress?.posterName || ""} | ${fallbackName}`;
             const resultsChannel = client.channels.cache.get(resultChannel!.result_channel_id) as TextChannel;
             const playtestingChannel = client.channels.cache.get(userProgress.channelId) as TextChannel;

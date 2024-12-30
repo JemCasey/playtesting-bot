@@ -1,7 +1,7 @@
 import { Interaction, TextChannel } from "discord.js";
 import { client } from "src/bot";
 import { asyncCharLimit, BONUS_DIFFICULTY_REGEX, BONUS_REGEX, bulkCharLimit, TOSSUP_REGEX } from "src/constants";
-import { buildButtonMessage, QuestionType, UserBonusProgress, UserProgress, UserTossupProgress, getEmbeddedMessage, getTossupParts, getToFirstIndicator, removeBonusValue, removeSpoilers, getCategoryName, getCategoryRole, isNumeric, removeQuestionNumber, getQuestionNumber, addRoles, getServerSettings, getAuthorName, cleanThreadName, getCategoryCount, getThreadId, getServerChannels } from "src/utils";
+import { buildButtonMessage, QuestionType, UserBonusProgress, UserProgress, UserTossupProgress, getEmbeddedMessage, getTossupParts, getToFirstIndicator, removeBonusValue, removeSpoilers, getCategoryName, getCategoryRole, isNumeric, removeQuestionNumber, getQuestionNumber, addRoles, getServerSettings, getAuthorName, cleanThreadName, getCategoryCount, getThreadId, getServerChannels, stripFormatting } from "src/utils";
 
 export default async function handleButtonClick(interaction: Interaction, userProgress: Map<string, UserProgress>, setUserProgress: (key: any, value: any) => void) {
     if (interaction.isButton() && interaction.customId === "play_question") {
@@ -101,12 +101,12 @@ export default async function handleButtonClick(interaction: Interaction, userPr
                 }
 
                 if (interaction.customId === "async_thread") {
-                    fallbackName = cleanThreadName(getToFirstIndicator(removeQuestionNumber(leadin), asyncCharLimit));
+                    fallbackName = cleanThreadName(getToFirstIndicator(stripFormatting(removeQuestionNumber(leadin)), asyncCharLimit));
                     threadName = metadata ?
                         `${metadata} | B${getCategoryCount(questionMessage.author.id, message.guild?.id, categoryName, true)}` :
                         `B | ${fallbackName}`;
                 } else if (interaction.customId === "bulk_thread") {
-                    fallbackName = cleanThreadName(getToFirstIndicator(removeQuestionNumber(leadin), bulkCharLimit));
+                    fallbackName = cleanThreadName(getToFirstIndicator(stripFormatting(removeQuestionNumber(leadin)), bulkCharLimit));
                     threadName = metadata ?
                         `${thisServerSetting?.packet_name ? thisServerSetting?.packet_name + "." : ""}B${isNumeric(questionNumber) ? questionNumber: ""} | ${categoryName} | ${fallbackName}` :
                         `B | ${fallbackName}`;
@@ -122,12 +122,12 @@ export default async function handleButtonClick(interaction: Interaction, userPr
                 }
 
                 if (interaction.customId === "async_thread") {
-                    fallbackName = cleanThreadName(getToFirstIndicator(removeQuestionNumber(question), asyncCharLimit));
+                    fallbackName = cleanThreadName(getToFirstIndicator(stripFormatting(removeQuestionNumber(question)), asyncCharLimit));
                     threadName = metadata ?
                         `${metadata} | T${getCategoryCount(questionMessage.author.id, message.guild?.id, categoryName, false)}` :
                         `T | ${fallbackName}`;
                 } else if (interaction.customId === "bulk_thread") {
-                    fallbackName = cleanThreadName(getToFirstIndicator(removeQuestionNumber(question), bulkCharLimit));
+                    fallbackName = cleanThreadName(getToFirstIndicator(stripFormatting(removeQuestionNumber(question)), bulkCharLimit));
                     threadName = metadata ?
                         `${thisServerSetting?.packet_name ? thisServerSetting?.packet_name + "." : ""}T${isNumeric(questionNumber) ? questionNumber: ""} | ${categoryName} | ${fallbackName}` :
                         `T | ${fallbackName}`;

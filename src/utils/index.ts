@@ -51,7 +51,8 @@ export const formatPercent = (value: number | null | undefined, minimumIntegerDi
 export const formatDecimal = (value: number | null | undefined, fractionDigits: number = 0) => value == null || value == undefined ? "" : value?.toFixed(fractionDigits);
 export const isNumeric = (value: string) => (/^-?\d+$/.test(value));
 export const getQuestionNumber = (question: string) => (question.replaceAll("\\", "").match(/(^\d+)\.\s*/)?.shift()?.trim().replace("\.", "") || "");
-export const cleanThreadName = (threadName: string) => (threadName.replaceAll("For 10 points each:", "").replaceAll(", for 10 points each:", "").replaceAll(", for 10 points each.", "").replaceAll("For 10 points each,", "").replaceAll(/\s\s+/g, " ").trim())
+export const cleanThreadName = (threadName: string) => (threadName.replaceAll("For 10 points each:", "").replaceAll(", for 10 points each:", "").replaceAll(", for 10 points each.", "").replaceAll("For 10 points each,", "").replaceAll(/\s\s+/g, " ").trim());
+export const stripFormatting = (s: string) => (s.replaceAll(/[^a-zA-Z0-9À-ž.,;()/"?!\s]/g, " ").replaceAll(/\s\s+/g, " ").trim());
 
 export const getCategoryName = (metadata: string | undefined) => {
     let category = "";
@@ -126,10 +127,15 @@ export type ServerChannel = {
     channel_type: number;
 }
 
+export type QuestionNote = {
+    index: number;
+    text: string;
+}
+
 export type QuestionResult = {
     points: number;
     passed: boolean;
-    note: string;
+    note: QuestionNote;
 }
 
 export type UserProgress = {
@@ -503,14 +509,18 @@ export const getToFirstIndicator = (clue: string, limit: number = 35) => {
     let trimmedClue = removeSpoilers(clue);
     const words = trimmedClue.split(" ");
     const thisIndex = words.findIndex(w => w.toLocaleLowerCase() === "this" || w.toLocaleLowerCase() === "these");
+    let trail = true;
 
     // if "this" or "these" is in the string and isn't the first word,
     // truncate shortly after first pronoun: https://github.com/JemCasey/playtesting-bot/issues/8
     if (thisIndex > 0) {
         trimmedClue = words.slice(0, thisIndex + 2).join(" ");
+        trail = ((trimmedClue.length > charLimit) || (thisIndex + 2 < words.length));
+    } else {
+        trail = trimmedClue.length > charLimit;
     }
 
-    return `${trimmedClue.substring(0, charLimit)}${trimmedClue.length > charLimit ? "..." : ""}`;
+    return `${trimmedClue.substring(0, charLimit)}${trail ? "..." : ""}`;
 }
 
 export const removeQuestionNumber = (question: string, get: boolean = false) => {

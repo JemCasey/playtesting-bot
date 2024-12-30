@@ -1,7 +1,7 @@
 import { Client, Message, TextChannel } from "discord.js";
 import { asyncCharLimit } from "src/constants";
 import KeySingleton from "src/services/keySingleton";
-import { UserTossupProgress, cleanThreadName, getEmbeddedMessage, getServerChannels, getSilentMessage, getThreadAndUpdateSummary, getToFirstIndicator, removeQuestionNumber, removeSpoilers, saveBuzz, shortenAnswerline } from "src/utils";
+import { UserTossupProgress, cleanThreadName, getEmbeddedMessage, getServerChannels, getSilentMessage, getThreadAndUpdateSummary, getToFirstIndicator, removeQuestionNumber, removeSpoilers, saveBuzz, shortenAnswerline, stripFormatting } from "src/utils";
 import { getEmojiList } from "src/utils/emojis";
 
 export default async function handleTossupPlaytest(message: Message<boolean>, client: Client<boolean>, userProgress: UserTossupProgress, setUserProgress: (key: string, value: UserTossupProgress) => void, deleteUserProgress: (key: any) => void) {
@@ -36,7 +36,7 @@ export default async function handleTossupPlaytest(message: Message<boolean>, cl
                 ...userProgress,
                 buzzed: false,
                 grade: false,
-                guesses: userProgress.guesses.slice(0, -1),
+                guesses: userProgress.guesses.filter(g => g.index !== index),
                 index
             });
 
@@ -126,7 +126,7 @@ export default async function handleTossupPlaytest(message: Message<boolean>, cl
 
         saveBuzz(userProgress.serverId, userProgress.questionId, userProgress.posterId, message.author.id, buzzIndex, charactersRevealed, value, sanitizedNote, key);
 
-        const fallbackName = cleanThreadName(getToFirstIndicator(removeQuestionNumber(userProgress.questionParts[0]), asyncCharLimit));
+        const fallbackName = cleanThreadName(getToFirstIndicator(stripFormatting(removeQuestionNumber(userProgress.questionParts[0])), asyncCharLimit));
         const threadName = `T | ${userProgress?.authorName || userProgress?.posterName || ""} | ${fallbackName}`;
         const resultsChannel = client.channels.cache.get(resultChannel!.result_channel_id) as TextChannel;
         const playtestingChannel = client.channels.cache.get(userProgress.channelId) as TextChannel;

@@ -1,14 +1,14 @@
 import { Message, Application, TextChannel } from "discord.js";
 import { asyncCharLimit, BONUS_DIFFICULTY_REGEX, BONUS_REGEX, bulkCharLimit, TOSSUP_REGEX } from "src/constants";
 import KeySingleton from "src/services/keySingleton";
-import { buildButtonMessage, getCategoryCount, getServerChannels, getTossupParts, getToFirstIndicator, removeSpoilers, saveBonus, BonusPart, saveTossup, shortenAnswerline, getCategoryName, getCategoryRole, isNumeric, ServerChannel, removeQuestionNumber, getQuestionNumber, addRoles, getServerSettings, saveBulkQuestion, cleanThreadName } from "src/utils";
+import { buildButtonMessage, getCategoryCount, getServerChannels, getTossupParts, getToFirstIndicator, removeSpoilers, saveBonus, BonusPart, saveTossup, shortenAnswerline, getCategoryName, getCategoryRole, isNumeric, ServerChannel, removeQuestionNumber, getQuestionNumber, addRoles, getServerSettings, saveBulkQuestion, cleanThreadName, stripFormatting } from "src/utils";
 import { client } from "src/bot";
 import { getEmojiList, reactEmojiList } from "src/utils/emojis";
 
 async function handleThread(msgChannel: ServerChannel, message: Message, isBonus: boolean, question: string, metadata: string, questionNumber: string = "") {
     let thisServerSetting = getServerSettings(message.guild!.id).find(ss => ss.server_id == message.guild!.id);
     let threadName = "Discussion Thread";
-    let fallbackName = cleanThreadName(getToFirstIndicator(removeQuestionNumber(question), msgChannel.channel_type === 2 ? bulkCharLimit : asyncCharLimit));
+    let fallbackName = cleanThreadName(getToFirstIndicator(stripFormatting(removeQuestionNumber(question)), msgChannel.channel_type === 2 ? bulkCharLimit : asyncCharLimit));
     let categoryName = getCategoryName(metadata);
     let categoryRoleName = getCategoryRole(categoryName);
     // console.log(`Metadata: ${metadata}`);
