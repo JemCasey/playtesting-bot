@@ -185,6 +185,20 @@ As [mentioned above](#configuration), there is already an instance of the bot th
 * Any admin of your playtesting server can invite the bot to the server using the above link.
 * Follow the steps in [Instructions for Users](#instructions-for-users) to configure and use the bot.
 
+### Troubleshooting
+
+#### Timeout Warning/Error
+
+The bot will fail to function if the system/container on which it is hosted falls asleep (regardless if the build is dev or production). You may receive a warning like below if that happens.
+
+```console
+(node:28928) TimeoutNegativeWarning: -4337237.284278179 is a negative number.
+Timeout duration was set to 1.
+(Use `node --trace-warnings ...` to show where the warning was created)
+```
+
+Hence, if you are running on e.g. a Raspberry Pi, prevent it from falling asleep or hibernating (turning the screen/monitor off is fine).
+
 ## License
 
 [ISC](https://choosealicense.com/licenses/isc/)
