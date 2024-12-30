@@ -35,8 +35,9 @@ export default async function handleTally(serverId: string, packetName: string, 
                         }
                         reacts = [
                             ...reacts,
-                            "tossup_10", "tossup_0", "tossup_neg5",
+                            "tossup_10", "tossup_0",
                             "tossup_DNC",
+                            "tossup_neg5",
                             // "tossup_FTP",
                         ];
                     }

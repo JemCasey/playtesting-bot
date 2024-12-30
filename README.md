@@ -96,8 +96,8 @@ To play [an asynchronous question that has been detected by the bot](./examples/
     * Tossups
       * 15 points - `:tossup_15:` (if the tossup is powermarked with `(*)`)
       * 10 points - `:tossup_10:`
-      * -5 points - `:tossup_neg5:`
       * DNC (did not convert) - `:tossup_DNC:`
+      * -5 points - `:tossup_neg5:`
     * Bonuses
       * Easy part - `:bonus_E:`
       * Medium part - `:bonus_M:`

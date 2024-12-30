@@ -56,8 +56,9 @@ async function handleReacts(message: Message, isBonus: boolean, parts: BonusPart
         }
         reacts = [
             ...reacts,
-            "tossup_10", "tossup_0", "tossup_neg5",
+            "tossup_10", "tossup_0",
             "tossup_DNC",
+            "tossup_neg5",
             // "tossup_FTP",
         ];
     }
