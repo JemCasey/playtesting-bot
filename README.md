@@ -20,6 +20,7 @@ These instructions for users have been split based on whether you are a manager 
 #### Configuration
 
 Use [this invite link](https://discord.com/api/oauth2/authorize?client_id=1128432579436101724&permissions=67584&scope=bot) to add the default instance of the bot (**Botticelli**) to your server.
+Note: This is Jordan Brownstein's version of the bot, **not** this fork.
 
 > [!IMPORTANT]
 > Botticelli is **in alpha and 24/7 availability is not guaranteed**. If this is a concern for your project, you can follow the steps under [Instruction for Developers](#instructions-for-developers) to set up your own instance.
@@ -37,7 +38,7 @@ Once added to the server, follow the instructions below to configure the bot:
   * Create channel(s) where the bot can access questions for bulk playtesting (e.g. `#playtesting`).
   * Create a channel where the bot can "echo" question metadata (e.g. `#questions`). This channel will serve as an index for anyone to easily find each question's discussion thread.
 * The above steps are already completed if you use the ACF Production Server Template.
-* Send `!config` in a channel to which the bot has access (e.g. `#bots`). **You must follow all necessary steps,** as per [this example image](./examples/config.jpg).
+* Send `!config` in a channel to which the bot has access (e.g. `#bots`). **You must follow all necessary steps,** as per [this example image](./examples/config.png).
 
 > [!IMPORTANT]
 > If you would like sensitive data, such as question answers and playtester notes, to be encrypted in the bot's database, add a role to your server called `secret` before playtesting any questions. **Once created, this role should not be deleted.** Some planned commands that access answer data will not be able to decrypt it if the role is removed or recreated.
@@ -70,7 +71,7 @@ ANSWER: ||Jean-Jacques \_\_\*\*Rousseau\*\*\_\_||
 [10] Name this author of a novel whose protagonist decries the “wasty ways” of the townsfolk of Templeton, who massacre thousands of passenger pigeons and leave piles of fish rotting on the shores of Lake Otsego.
 ANSWER: ||James Fenimore \_\_\*\*Cooper\*\*\_\_||
 [10] ||Cooper presented his early preservationist views via the character of Natty Bumppo in works like \_The Pioneers\_ and this novel. Chingachgook, who is the title character of this novel, escorts Colonel Munro’s daughters.||
-ANSWER: ||\_The\_\_\*\*Last of the Mohicans\*\*\_\_\_||
+ANSWER: ||\_The\_\_ \*\*Last of the Mohicans\*\*\_\_\_||
 [10] ||In \_The Pioneers\_, Natty is arrested for performing this action after Templeton adopts anti-waste laws. Natty’s rifle is nicknamed for this action, which titles the chronologically first Leatherstocking Tale.||
 ANSWER: ||\_\_\*\*kill\*\*\_\_ing a \_\_\*\*deer\*\*\_\_ [accept any synonyms in place of “killing,” such as \_\_\*\*hunt\*\*\_\_ing or \_\_\*\*shoot\*\*\_\_ing; accept \_\_\*\*Killdeer\*\*\_\_ or \_The \_\_\*\*Deerslay\*\*\_\_er\_; prompt on partial answers]||
 \<JB\, American Literature\>
@@ -131,7 +132,7 @@ As [mentioned above](#configuration), there is already an instance of the bot th
 
 * Visit the [Discord Developer Application Portal](https://discord.com/developers/applications) and create a bot by clicking the `New Application` button.
 * In the portal, take note of your bot's client secret and application ID ("Client ID") by going to the `OAuth2` panel.
-* Go to the `Bot` panel and take note of your bot's token. You may have to reset the token.
+* Go to the `Bot` panel and take note of your bot's token. You may have to reset the token. This token is the `DISCORD_TOKEN` that should be used in the `.env` file below, not the client secret from above.
 * Create a file called `.env` in your local clone's root directory.
 * Add the token and application ID to `.env` in the following format:
 
