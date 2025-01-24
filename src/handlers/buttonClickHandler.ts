@@ -1,7 +1,7 @@
 import { Interaction, TextChannel } from "discord.js";
 import { client } from "src/bot";
 import { asyncCharLimit, BONUS_DIFFICULTY_REGEX, BONUS_REGEX, bulkCharLimit, TOSSUP_REGEX } from "src/constants";
-import { buildButtonMessage, QuestionType, UserBonusProgress, UserProgress, UserTossupProgress, getEmbeddedMessage, getTossupParts, getToFirstIndicator, removeBonusValue, removeSpoilers, getCategoryName, getCategoryRole, isNumeric, removeQuestionNumber, getQuestionNumber, addRoles, getServerSettings, getAuthorName, cleanThreadName, getCategoryCount, getThreadId, getServerChannels, stripFormatting } from "src/utils";
+import { buildButtonMessage, QuestionType, UserBonusProgress, UserProgress, UserTossupProgress, getEmbeddedMessage, getTossupParts, getToFirstIndicator, removeBonusValue, removeSpoilers, getCategoryName, getCategoryRole, isNumeric, removeQuestionNumber, getQuestionNumber, addRoles, getServerSettings, getAuthorName, cleanThreadName, getCategoryCount, getResultsThreadId, getServerChannels, stripFormatting } from "src/utils";
 
 export default async function handleButtonClick(interaction: Interaction, userProgress: Map<string, UserProgress>, setUserProgress: (key: any, value: any) => void) {
     if (interaction.isButton() && interaction.customId === "play_question") {
@@ -142,7 +142,7 @@ export default async function handleButtonClick(interaction: Interaction, userPr
             if (thread) {
                 if (interaction.customId === "async_thread") {
                     const buttonLabel = "Play " + (!!bonusMatch ? "Bonus" : "Tossup");
-                    let resultsThreadId = getThreadId(questionMessage.id, !!bonusMatch ? QuestionType.Bonus : QuestionType.Tossup);
+                    let resultsThreadId = getResultsThreadId(questionMessage.id, !!bonusMatch ? QuestionType.Bonus : QuestionType.Tossup);
                     if (resultsThreadId) {
                         const resultChannel = getServerChannels(message.guild!.id).find(s => (s.channel_id === message.channelId && s.channel_type === 1));
                         const resultsChannel = client.channels.cache.get(resultChannel!.result_channel_id) as TextChannel;

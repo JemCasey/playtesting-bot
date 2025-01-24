@@ -1,7 +1,7 @@
 import { Client, Message, TextChannel } from "discord.js";
 import { asyncCharLimit } from "src/constants";
 import KeySingleton from "src/services/keySingleton";
-import { UserTossupProgress, cleanThreadName, getEmbeddedMessage, getServerChannels, getSilentMessage, getThreadAndUpdateSummary, getToFirstIndicator, removeQuestionNumber, removeSpoilers, saveBuzz, shortenAnswerline, stripFormatting } from "src/utils";
+import { UserTossupProgress, cleanThreadName, getEmbeddedMessage, getServerChannels, getSilentMessage, getResultsThreadAndUpdateSummary, getToFirstIndicator, removeQuestionNumber, removeSpoilers, saveBuzz, shortenAnswerline, stripFormatting } from "src/utils";
 import { getEmojiList } from "src/utils/emojis";
 
 export default async function handleTossupPlaytest(message: Message<boolean>, client: Client<boolean>, userProgress: UserTossupProgress, setUserProgress: (key: string, value: UserTossupProgress) => void, deleteUserProgress: (key: any) => void) {
@@ -131,13 +131,18 @@ export default async function handleTossupPlaytest(message: Message<boolean>, cl
         const threadName = `T | ${userProgress?.authorName || userProgress?.posterName || ""} | ${fallbackName}`;
         const resultsChannel = client.channels.cache.get(resultChannel!.result_channel_id) as TextChannel;
         const playtestingChannel = client.channels.cache.get(userProgress.channelId) as TextChannel;
-        const thread = await getThreadAndUpdateSummary(userProgress, threadName.replaceAll(/\s\s+/g, " ").trim().slice(0, 100), resultsChannel, playtestingChannel);
+        const thread = await getResultsThreadAndUpdateSummary(userProgress, threadName.replaceAll(/\s\s+/g, " ").trim().slice(0, 100), resultsChannel, playtestingChannel);
 
         await thread.send(resultMessage);
 
         deleteUserProgress(message.author.id);
 
-        await message.author.send(getEmbeddedMessage(`Your result has been sent to <#${thread.id}>.`, true));
+        await message.author.send(getEmbeddedMessage(`Your result has been sent to this thread: <#${thread.id}>.`, true));
+
+        const questionMessage = await playtestingChannel.messages.fetch(userProgress.questionId);
+        if (questionMessage.hasThread) {
+            await message.author.send(getEmbeddedMessage(`See the discussion thread: <#${questionMessage?.thread?.id}>.`, true));
+        }
     } else {
         await message.author.send(getEmbeddedMessage("Command not recognized.", true));
     }

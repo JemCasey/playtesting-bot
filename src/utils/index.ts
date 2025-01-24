@@ -44,8 +44,8 @@ const other_names = ["other", "academic", "geography", "current", "events", "pop
 
 type nullableString = string | null | undefined;
 
-export const removeSpoilers = (text: string) => text?.replaceAll("||", "") || "";
-export const shortenAnswerline = (answerline: string) => removeSpoilers(answerline.replace(/ \[.+\]/, "").replace(/ \(.+\)/, "")).trim();
+export const removeSpoilers = (text: string) => text?.replaceAll("||", "").trim() || "";
+export const shortenAnswerline = (answerline: string) => removeSpoilers(answerline.replaceAll("`", "").replaceAll(/ \[.+\]/g, "").replaceAll(/ \(.+\)/g, "")).trim();
 export const removeBonusValue = (bonusPart: string) => bonusPart.replace(/\|{0,2}\[10\|{0,2}[emh]?\|{0,2}]\|{0,2} ?/, "");
 export const formatPercent = (value: number | null | undefined, minimumIntegerDigits: number | undefined = undefined, minimumFractionDigits: number = 0) => value == null || value == undefined ? "" : value.toLocaleString(undefined, { style: 'percent', minimumFractionDigits, minimumIntegerDigits });
 export const formatDecimal = (value: number | null | undefined, fractionDigits: number = 0) => value == null || value == undefined ? "" : value?.toFixed(fractionDigits);
@@ -283,35 +283,35 @@ export const getServerChannels = (serverId: string) => {
     return getServerChannelsQuery.all(serverId) as ServerChannel[];
 }
 
-export const updateThreadId = (questionId: string, questionType: QuestionType, threadId: string) => {
+export const updateResultsThreadId = (questionId: string, questionType: QuestionType, threadId: string) => {
     if (questionType === QuestionType.Bonus)
         updateBonusThreadCommand.run(threadId, questionId);
     else
         updateTossupThreadCommand.run(threadId, questionId);
 }
 
-export const getThreadId = (questionId: string, questionType: QuestionType) => {
+export const getResultsThreadId = (questionId: string, questionType: QuestionType) => {
     if (questionType === QuestionType.Bonus)
         return (getBonusThreadQuery.get(questionId) as any).thread_id;
     else
         return (getTossupThreadQuery.get(questionId) as any).thread_id;
 }
 
-export const getThreadAndUpdateSummary = async (userProgress: UserProgress, threadName: string, resultsChannel: TextChannel, playtestingChannel: TextChannel) => {
-    const threadId = getThreadId(userProgress.questionId, userProgress.type);
-    let thread;
+export const getResultsThreadAndUpdateSummary = async (userProgress: UserProgress, threadName: string, resultsChannel: TextChannel, playtestingChannel: TextChannel) => {
+    const resultsThreadId = getResultsThreadId(userProgress.questionId, userProgress.type);
+    let resultsThread;
 
-    if (!threadId) {
-        thread = await resultsChannel.threads.create({
+    if (!resultsThreadId) {
+        resultsThread = await resultsChannel.threads.create({
             name: threadName.replaceAll(/\s\s+/g, " ").trim(),
             autoArchiveDuration: 60
         });
-        updateThreadId(userProgress.questionId, userProgress.type, thread.id);
+        updateResultsThreadId(userProgress.questionId, userProgress.type, resultsThread.id);
 
         try {
-            await thread.members.add(userProgress.posterId);
+            await resultsThread.members.add(userProgress.posterId);
         } catch (error) {
-            console.error(`Error adding member to thread: ${error}`);
+            console.error(`Error adding member to results thread: ${error}`);
         }
 
         const buttonMessage = await playtestingChannel.messages.fetch(userProgress.buttonMessageId);
@@ -321,25 +321,25 @@ export const getThreadAndUpdateSummary = async (userProgress: UserProgress, thre
             if (questionMessage.hasThread || questionMessage.content.includes("!t")) {
                 buttonMessage.edit(buildButtonMessage([
                     {label: buttonLabel, id: "play_question", url: ""},
-                    {label: "Results", id: "", url: thread.url}
+                    {label: "Results", id: "", url: resultsThread.url}
                 ]));
             } else {
                 buttonMessage.edit(buildButtonMessage([
                     {label: "Create Discussion Thread", id: "async_thread", url: ""},
                     {label: buttonLabel, id: "play_question", url: ""},
-                    {label: "Results", id: "", url: thread.url}
+                    {label: "Results", id: "", url: resultsThread.url}
                 ]));
             }
         }
 
         if (userProgress.type === QuestionType.Tossup) {
-            thread.send(await getTossupSummary(userProgress.questionId, (userProgress as UserTossupProgress).questionParts, (userProgress as UserTossupProgress).answer, userProgress.questionUrl));
+            resultsThread.send(await getTossupSummary(userProgress.questionId, (userProgress as UserTossupProgress).questionParts, (userProgress as UserTossupProgress).answer, userProgress.questionUrl));
         } else {
-            thread.send(await getBonusSummary(userProgress.questionId, userProgress.questionUrl));
+            resultsThread.send(await getBonusSummary(userProgress.questionId, userProgress.questionUrl));
         }
     } else {
-        thread = resultsChannel.threads.cache.find(x => x.id === threadId);
-        const resultsMessage = (await thread!.messages.fetch()).find(m => m.content.includes("## Results"));
+        resultsThread = resultsChannel.threads.cache.find(x => x.id === resultsThreadId);
+        const resultsMessage = (await resultsThread!.messages.fetch()).find(m => m.content.includes("## Results"));
 
         if (resultsMessage) {
             if (userProgress.type === QuestionType.Tossup)
@@ -349,7 +349,7 @@ export const getThreadAndUpdateSummary = async (userProgress: UserProgress, thre
         }
     }
 
-    return thread!;
+    return resultsThread!;
 }
 
 export const getServerSettings = (serverId: string) => {
@@ -420,17 +420,23 @@ export async function getTossupSummary(questionId: string, questionParts: string
     groupedBuzzes.forEach(async function (buzzpoint) {
         let cumulativeCharacters = questionParts.slice(0, buzzpoint.index + 1).join("").length;
         let point_value_msgs: string[] = [];
-        let lineSummary = `* ${formatPercent(cumulativeCharacters / totalCharacters)} (||${questionParts[buzzpoint.index].substring(0, 30)}||)\n`;
+        let thisIndex = buzzpoint.index;
+        if (thisIndex > questionParts.length) {
+            thisIndex = questionParts.length;
+        }
+        if (questionParts[thisIndex]) {
+            let lineSummary = `* ${formatPercent(cumulativeCharacters / totalCharacters)} (||${questionParts[buzzpoint.index].substring(0, 30)}||)\n`;
 
-        point_values.forEach(async function (point_value: number, i) {
-            let point_value_count = buzzpoint.buzzes?.filter(b => b.value == point_value)?.length || 0;
-            if (point_value_count > 0) {
-                point_value_msgs.push(`${point_value_count} × ${points_emojis[i]}`);
-            }
-        })
+            point_values.forEach(async function (point_value: number, i) {
+                let point_value_count = buzzpoint.buzzes?.filter(b => b.value == point_value)?.length || 0;
+                if (point_value_count > 0) {
+                    point_value_msgs.push(`${point_value_count} × ${points_emojis[i]}`);
+                }
+            })
 
-        lineSummary += "\t* " + point_value_msgs.join("   ");
-        tossupSummary += lineSummary + "\n";
+            lineSummary += "\t* " + point_value_msgs.join("   ");
+            tossupSummary += lineSummary + "\n";
+        }
     });
 
     tossupSummary += `**Plays**: ${buzzes.length}\t`;
