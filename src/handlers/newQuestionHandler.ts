@@ -51,7 +51,7 @@ async function handleReacts(message: Message, isBonus: boolean, parts: BonusPart
         }
         reacts = [...reacts, "bonus_0"];
     } else {
-        if (message.content.includes("\(\*\)")) {
+        if (message.content.includes("(\\*)")) {
             reacts = [...reacts, "tossup_15"];
         }
         reacts = [
