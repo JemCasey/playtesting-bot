@@ -71,7 +71,7 @@ ANSWER: ||Jean-Jacques \_\_\*\*Rousseau\*\*\_\_||
 [10] Name this author of a novel whose protagonist decries the “wasty ways” of the townsfolk of Templeton, who massacre thousands of passenger pigeons and leave piles of fish rotting on the shores of Lake Otsego.
 ANSWER: ||James Fenimore \_\_\*\*Cooper\*\*\_\_||
 [10] ||Cooper presented his early preservationist views via the character of Natty Bumppo in works like \_The Pioneers\_ and this novel. Chingachgook, who is the title character of this novel, escorts Colonel Munro’s daughters.||
-ANSWER: ||\_The\_\_ \*\*Last of the Mohicans\*\*\_\_\_||
+ANSWER: ||\_The \_\_\*\*Last of the Mohicans\*\*\_\_\_||
 [10] ||In \_The Pioneers\_, Natty is arrested for performing this action after Templeton adopts anti-waste laws. Natty’s rifle is nicknamed for this action, which titles the chronologically first Leatherstocking Tale.||
 ANSWER: ||\_\_\*\*kill\*\*\_\_ing a \_\_\*\*deer\*\*\_\_ [accept any synonyms in place of “killing,” such as \_\_\*\*hunt\*\*\_\_ing or \_\_\*\*shoot\*\*\_\_ing; accept \_\_\*\*Killdeer\*\*\_\_ or \_The \_\_\*\*Deerslay\*\*\_\_er\_; prompt on partial answers]||
 \<JB\, American Literature\>
