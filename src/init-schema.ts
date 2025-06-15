@@ -12,7 +12,14 @@ db.exec(`
 `);
 
 db.exec(`
-CREATE TABLE IF NOT EXISTS tossup (
+  CREATE TABLE IF NOT EXISTS server_setting (
+    server_id TEXT PRIMARY KEY,
+    packet_name TEXT
+  )
+`);
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS tossup (
     question_id TEXT PRIMARY KEY,
     server_id TEXT,
     author_id TEXT,
@@ -20,32 +27,32 @@ CREATE TABLE IF NOT EXISTS tossup (
     category TEXT,
     answer TEXT,
     thread_id TEXT
-)
+  )
 `)
 
 db.exec(`
-CREATE TABLE IF NOT EXISTS bonus (
+  CREATE TABLE IF NOT EXISTS bonus (
     question_id TEXT PRIMARY KEY,
     server_id TEXT,
     author_id TEXT,
     category TEXT,
     thread_id TEXT
-)
+  )
 `)
 
 db.exec(`
-CREATE TABLE IF NOT EXISTS bonus_part (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  question_id TEXT,
-  part INT,
-  difficulty TEXT,
-  answer TEXT,
-  UNIQUE (question_id, part)
-)
+  CREATE TABLE IF NOT EXISTS bonus_part (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    question_id TEXT,
+    part INT,
+    difficulty TEXT,
+    answer TEXT,
+    UNIQUE (question_id, part)
+  )
 `)
 
 db.exec(`
-CREATE TABLE IF NOT EXISTS buzz (
+  CREATE TABLE IF NOT EXISTS buzz (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     server_id TEXT,
     question_id TEXT,
@@ -55,7 +62,7 @@ CREATE TABLE IF NOT EXISTS buzz (
     characters_revealed INT,
     value INT,
     answer_given TEXT
-)
+  )
 `)
 
 db.exec(`
@@ -69,4 +76,18 @@ CREATE TABLE IF NOT EXISTS bonus_direct (
     value INT,
     answer_given TEXT
 )
+`)
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS bulk (
+    question_id TEXT PRIMARY KEY,
+    server_id TEXT,
+    channel_id TEXT,
+    packet_name TEXT,
+    question_number INT,
+    question_type TEXT,
+    category TEXT,
+    answers TEXT,
+    echo_id TEXT
+  )
 `)
